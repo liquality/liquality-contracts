@@ -66,6 +66,14 @@ Run the Mocha tests:
 $ yarn test
 ```
 
+### Run Watcher
+
+Run tests while watching contracts and tests. (faster development)
+
+```sh
+$ yarn watch
+```
+
 ### Coverage
 
 Generate the code coverage report:
