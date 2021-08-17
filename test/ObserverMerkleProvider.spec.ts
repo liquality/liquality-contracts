@@ -12,12 +12,8 @@ describe('ObserverMerkleProvider', function () {
   // })
 
   beforeEach(async function () {
-    const ObserverMerkleProvider = await ethers.getContractFactory(
-      'ObserverMerkleProvider'
-    )
-    merkleProvider = <ObserverMerkleProvider>(
-      await ObserverMerkleProvider.deploy()
-    )
+    const ObserverMerkleProvider = await ethers.getContractFactory('ObserverMerkleProvider')
+    merkleProvider = <ObserverMerkleProvider>await ObserverMerkleProvider.deploy()
   })
 
   it('should start at 0 epoch', async function () {
