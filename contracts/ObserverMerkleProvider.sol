@@ -5,8 +5,6 @@ import "hardhat/console.sol";
 import "./interfaces/IEpochMerkleProvider.sol";
 import "./interfaces/IEpochObserverHandler.sol";
 
-error GreeterError();
-
 contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
   /// Threshold of merkle roots after which epoch is considered finalized
   /// @dev TODO: This will need to be governance decided or based on staked LIQ
