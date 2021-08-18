@@ -17,6 +17,10 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     /// A mapping of epoch to merkle root that is finalized.
     mapping(uint256 => bytes32) public sealedMerkleRoots;
 
+    /// A mapping
+    /// @dev TODO: optimise into a bitmap
+    mapping(uint256 => mapping(address => bool)) submittedObservers;
+
     /// List of merkle roots for a given epoch.
     /// Potentially usable?
     /// mapping(uint256 => bytes32[]) public epochMerkleRoots;
@@ -30,6 +34,18 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
         _;
     }
 
+    /// @dev An observer can only submit merkle root once for an epoch
+    modifier submitOnce(uint256 epoch, address observer) {
+        require(submittedObservers[epoch][observer] == false, "OBSERVER_VOTED_ALREADY");
+        _;
+        submittedObservers[epoch][observer] = true;
+    }
+
+    /// @inheritdoc IEpochObserverHandler
+    function isEpochSealed(uint256 epoch) external view override returns (bool) {
+        return sealedMerkleRoots[epoch] != bytes32(0x0);
+    }
+
     /// @inheritdoc IEpochMerkleProvider
     function merkleRoot(uint256 epoch) external view override returns (bytes32) {
         return sealedMerkleRoots[epoch];
@@ -38,13 +54,15 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     function sealEpoch(uint256 epoch, bytes32 _merkleRoot) private {
         sealedMerkleRoots[epoch] = _merkleRoot;
         lastEpoch = epoch;
+        emit SealEpoch(epoch, _merkleRoot);
     }
 
     /// @inheritdoc IEpochObserverHandler
-    function submitRoot(uint256 epoch, bytes32 _merkleRoot)
+    function submitMerkleRoot(uint256 epoch, bytes32 _merkleRoot)
         external
         override
         onlyValidEpoch(epoch)
+        submitOnce(epoch, msg.sender)
     {
         merkleRootCounts[epoch][_merkleRoot]++;
         if (merkleRootCounts[epoch][_merkleRoot] >= SEALED_THRESHOLD) {

@@ -6,4 +6,4 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IEpochMerkleDistributor.sol";
 
-contract MerkleDistributor {}
+contract EpochMerkleDistributor {}

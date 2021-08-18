@@ -103,6 +103,7 @@ const config: HardhatUserConfig = {
       files: ['./contracts', './test'],
       tasks: [
         { command: 'compile', params: { quiet: true } },
+        { command: 'typechain', params: { quiet: true } },
         { command: 'test', params: { noCompile: true } }
       ]
     }
