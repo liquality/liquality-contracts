@@ -19,7 +19,7 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
 
     /// A mapping
     /// @dev TODO: optimise into a bitmap
-    mapping(uint256 => mapping(address => bool)) submittedObservers;
+    mapping(uint256 => mapping(address => bool)) public submittedObservers;
 
     /// List of merkle roots for a given epoch.
     /// Potentially usable?
@@ -41,7 +41,7 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
         submittedObservers[epoch][observer] = true;
     }
 
-    /// @inheritdoc IEpochObserverHandler
+    /// @inheritdoc IEpochMerkleProvider
     function isEpochSealed(uint256 epoch) external view override returns (bool) {
         return sealedMerkleRoots[epoch] != bytes32(0x0);
     }
