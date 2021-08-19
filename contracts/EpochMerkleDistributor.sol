@@ -5,19 +5,18 @@ import "hardhat/console.sol";
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./interfaces/IEpochMerkleDistributor.sol";
 import "./interfaces/IEpochMerkleProvider.sol";
-import "./libraries/ClaimBitmap.sol";
 
 contract EpochMerkleDistributor is IEpochMerkleDistributor {
-    /// TODO: consider replacing with openzepplin bitmap
-    using ClaimBitmap for mapping(uint256 => uint256);
+    using BitMaps for BitMaps.BitMap;
 
     address public immutable override merkleRootProvider;
     address public immutable override token;
 
     /// A packaed array of claimed account indexes, per epoch
-    mapping(uint256 => mapping(uint256 => uint256)) private claimBitmaps;
+    mapping(uint256 => BitMaps.BitMap) private claimBitmaps;
 
     constructor(address _merkleRootProvider, address _token) {
         merkleRootProvider = _merkleRootProvider;
@@ -25,7 +24,7 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
     }
 
     function isClaimed(uint256 epoch, uint256 index) public view override returns (bool) {
-        return claimBitmaps[epoch].isClaimed(index);
+        return BitMaps.get(claimBitmaps[epoch], index);
     }
 
     function claim(
@@ -46,7 +45,7 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
 
         require(MerkleProof.verify(merkleProof, merkleRoot, node), "MERKLE_PROOF_VERIFY_FAILED");
 
-        claimBitmaps[epoch].setClaimed(index);
+        BitMaps.set(claimBitmaps[epoch], index);
         require(IERC20(token).transfer(account, amount), "CLAIM_TRANSFER_FAILED");
 
         emit Claim(epoch, index, account, amount);
