@@ -3,7 +3,7 @@ pragma solidity >=0.8.4;
 
 library ClaimBitmap {
     /// Computes the position in the mapping for the given index
-    function position(uint256 index) private pure returns (uint256 word, uint256 bit) {
+    function position(uint256 index) internal pure returns (uint256 word, uint256 bit) {
         word = index / 256;
         bit = index % 256;
     }
@@ -17,7 +17,7 @@ library ClaimBitmap {
 
     /// Returns true if index is claimed.
     function isClaimed(mapping(uint256 => uint256) storage self, uint256 index)
-        public
+        internal
         view
         returns (bool)
     {

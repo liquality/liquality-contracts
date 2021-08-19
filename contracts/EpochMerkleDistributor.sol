@@ -2,6 +2,7 @@
 pragma solidity >=0.8.4;
 
 import "hardhat/console.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IEpochMerkleDistributor.sol";
@@ -9,6 +10,7 @@ import "./interfaces/IEpochMerkleProvider.sol";
 import "./libraries/ClaimBitmap.sol";
 
 contract EpochMerkleDistributor is IEpochMerkleDistributor {
+    /// TODO: consider replacing with openzepplin bitmap
     using ClaimBitmap for mapping(uint256 => uint256);
 
     address public immutable override merkleRootProvider;
@@ -41,6 +43,7 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
         // Retrieve the merkle root for the epoch
         bytes32 merkleRoot = IEpochMerkleProvider(merkleRootProvider).merkleRoot(epoch);
         bytes32 node = keccak256(abi.encodePacked(index, account, amount));
+
         require(MerkleProof.verify(merkleProof, merkleRoot, node), "MERKLE_PROOF_VERIFY_FAILED");
 
         claimBitmaps[epoch].setClaimed(index);
