@@ -3,3 +3,6 @@
 build/
 dist/
 node_modules/
+
+# Governance contracts should retain formatting
+contracts/governance/
