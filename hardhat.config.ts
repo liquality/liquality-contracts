@@ -60,6 +60,8 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      gas: 12000000,
+      allowUnlimitedContractSize: true,
       accounts: {
         mnemonic
       },

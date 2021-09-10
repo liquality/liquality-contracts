@@ -1,11 +1,11 @@
 import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address'
 
-import { ObserverMerkleProvider } from '../typechain/ObserverMerkleProvider'
-import { EpochMerkleDistributor } from '../typechain/EpochMerkleDistributor'
-import { Token } from '../typechain/Token'
+import { ObserverMerkleProvider } from '../../typechain'
+import { EpochMerkleDistributor } from '../../typechain'
+import { Token } from '../../typechain/Token'
 import { expect } from 'chai'
-import { generateMerkleData, MerkleData } from './utils/merkleGenerator'
+import { generateMerkleData, MerkleData } from '../utils/merkleGenerator'
 import { BigNumber } from 'ethers'
 
 describe('EpochMerkleDistributor', function () {

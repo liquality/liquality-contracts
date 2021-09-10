@@ -6,6 +6,14 @@
 - Governance - Forked from https://github.com/compound-finance/compound-protocol/commit/a6251ecc30adb8dfa904e2231e9a9fdb4eea78be and upgrade to 0.8.0 solidity
 - Observers
 
+## Governance deployment
+
+How governance is deployed.
+
+- First deploy the `GovernorBravoDelegate` this will be a shell until it's initialised
+- Deploy `Timelock` with the above contract address as admin
+- Deploy `GovernorBravoDelegator`, this will initialize the governance and set the admin as the timelock
+
 ## Usage
 
 ### Pre Requisites

@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address'
 
-import { ObserverMerkleProvider } from '../typechain/ObserverMerkleProvider'
+import { ObserverMerkleProvider } from '../../typechain/ObserverMerkleProvider'
 import { expect } from 'chai'
 
 const ROOT_1 = ethers.utils.sha256('0x01')
