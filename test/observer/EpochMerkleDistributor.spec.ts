@@ -1,6 +1,8 @@
 import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address'
+import { deployMockContract, MockContract } from '@ethereum-waffle/mock-contract'
 
+import Liqtroller from '../../artifacts/contracts/controller/Liqtroller.sol/Liqtroller.json'
 import { ObserverMerkleProvider } from '../../typechain'
 import { EpochMerkleDistributor } from '../../typechain'
 import { Token } from '../../typechain/Token'
@@ -9,6 +11,7 @@ import { generateMerkleData, MerkleData } from '../utils/merkleGenerator'
 import { BigNumber } from 'ethers'
 
 describe('EpochMerkleDistributor', function () {
+  let mockLiqtroller: MockContract
   let merkleProvider: ObserverMerkleProvider
   let merkleDistributor: EpochMerkleDistributor
   let token: Token
@@ -66,7 +69,11 @@ describe('EpochMerkleDistributor', function () {
         BigNumber.from('1000000000000000000000')
       )
     )
-    merkleProvider = <ObserverMerkleProvider>await ObserverMerkleProviderFactory.deploy()
+    mockLiqtroller = await deployMockContract(observers[0], Liqtroller.abi)
+    mockLiqtroller.mock.epochSealThreshold.returns(3)
+    merkleProvider = <ObserverMerkleProvider>(
+      await ObserverMerkleProviderFactory.deploy(mockLiqtroller.address)
+    )
     merkleDistributor = <EpochMerkleDistributor>(
       await EpochMerkleDistributorFactory.deploy(merkleProvider.address, token.address)
     )

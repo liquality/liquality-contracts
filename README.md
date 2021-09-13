@@ -13,6 +13,16 @@ How governance is deployed.
 - First deploy the `GovernorBravoDelegate` this will be a shell until it's initialised
 - Deploy `Timelock` with the above contract address as admin
 - Deploy `GovernorBravoDelegator`, this will initialize the governance and set the admin as the timelock
+- Deploy `Liqtroller` with admin being set to `GovernorBravoDelegator` address
+
+## Pending
+
+Implement Unitroller method: https://github.com/compound-finance/compound-protocol/blob/master/contracts/Unitroller.sol
+
+Needs only have setImplementation method with admin being Governance. Liqtrollers will need to be changed to have `_become()` method that:
+
+1. Sets implementation of unitroller to the current contract
+2. Copies over any storage variables from pervious controller version
 
 ## Usage
 

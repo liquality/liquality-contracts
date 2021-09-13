@@ -4,11 +4,15 @@ pragma solidity >=0.8.4;
 import "hardhat/console.sol";
 import "./interfaces/IEpochMerkleProvider.sol";
 import "./interfaces/IEpochObserverHandler.sol";
+import "../controller/Liqtroller.sol";
 
 contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
-    /// Threshold of merkle roots after which epoch is considered finalized
-    /// @dev TODO: This will need to be governance decided or based on staked LIQ
-    uint256 private constant SEALED_THRESHOLD = 3;
+    Liqtroller public liqtroller;
+
+    /// TODO: Should be unitroller. Such that upgrade is not required when the controller contract gets upgraded. See README
+    constructor(address _liqtroller) {
+        liqtroller = Liqtroller(_liqtroller);
+    }
 
     /// @dev This is a simple implementation counting the merkle roots for an epoch.
     /// TODO: eventually this will need to considered stake
@@ -65,7 +69,7 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
         submitOnce(epoch, msg.sender)
     {
         merkleRootCounts[epoch][_merkleRoot]++;
-        if (merkleRootCounts[epoch][_merkleRoot] >= SEALED_THRESHOLD) {
+        if (merkleRootCounts[epoch][_merkleRoot] >= liqtroller.epochSealThreshold()) {
             sealEpoch(epoch, _merkleRoot);
         }
     }
