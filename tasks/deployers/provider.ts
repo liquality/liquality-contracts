@@ -9,10 +9,11 @@ import {
   ObserverMerkleProvider,
   ObserverMerkleProvider__factory,
   Liqtroller,
-  Liqtroller__factory
+  Liqtroller__factory,
+  EpochMerkleDistributor,
+  EpochMerkleDistributor__factory
 } from '../../typechain'
 
-console.log
 const liqtrollerAdmin: string | undefined = process.env.LIQTROLLER_ADMIN
 if (!liqtrollerAdmin) {
   throw new Error('Please set your LIQTROLLER_ADMIN in a .env file')
@@ -21,6 +22,11 @@ if (!liqtrollerAdmin) {
 const initialEpochSealThreshold: string | undefined = process.env.INITIAL_EPOCH_SEAL_THRESHOLD
 if (!initialEpochSealThreshold) {
   throw new Error('Please set your INITIAL_EPOCH_SEAL_THRESHOLD in a .env file')
+}
+
+const liqTokenAddress: string | undefined = process.env.LIQ_TOKEN_ADDRESS
+if (!liqTokenAddress) {
+  throw new Error('Please set your LIQ_TOKEN_ADDRESS in a .env file')
 }
 
 task('deploy:ObserverMerkleProvider').setAction(async function (
@@ -41,4 +47,12 @@ task('deploy:ObserverMerkleProvider').setAction(async function (
   )
   await observerMerkleProvider.deployed()
   console.log('ObserverMerkleProvider deployed to: ', observerMerkleProvider.address)
+
+  const epochMerkleDistributorFactory: EpochMerkleDistributor__factory =
+    await ethers.getContractFactory('EpochMerkleDistributor')
+  const epochMerkleDistributor: EpochMerkleDistributor = <EpochMerkleDistributor>(
+    await epochMerkleDistributorFactory.deploy(observerMerkleProvider.address, liqTokenAddress)
+  )
+  await epochMerkleDistributor.deployed()
+  console.log('EpochMerkleDistributor deployed to: ', epochMerkleDistributor.address)
 })
