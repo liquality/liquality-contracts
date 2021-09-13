@@ -11,9 +11,7 @@ import "./LiqtrollerStorage.sol";
 /// 2. Copies over any storage variables from pervious controller version
 
 contract Liqtroller is ILiqtroller, LiqtrollerStorageV1 {
-    uint256 internal constant initialEpochSealThreshold = 1;
-
-    constructor(address _admin) {
+    constructor(address _admin, uint256 initialEpochSealThreshold) {
         admin = _admin;
         epochSealThreshold = initialEpochSealThreshold;
     }

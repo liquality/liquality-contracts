@@ -15,6 +15,12 @@ How governance is deployed.
 - Deploy `GovernorBravoDelegator`, this will initialize the governance and set the admin as the timelock
 - Deploy `Liqtroller` with admin being set to `GovernorBravoDelegator` address
 
+## Observer deployment
+
+- Add `LIQTROLLER_ADMIN`, `INITIAL_EPOCH_SEAL_THRESHOLD` and `LIQ_TOKEN_ADDRESS` inside the `.env` file
+- Run `yarn deploy --network <network_name>`
+- The order of deployment is: `Liqtroller` -> `ObserverMerkleProvider` -> `EpochMerkleDistributor`
+
 ## Pending
 
 Implement Unitroller method: https://github.com/compound-finance/compound-protocol/blob/master/contracts/Unitroller.sol
