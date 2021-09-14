@@ -1,1 +1,2 @@
-import './provider'
+import './observer'
+import './token'
