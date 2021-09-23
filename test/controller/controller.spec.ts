@@ -14,7 +14,7 @@ describe('Controller', function () {
 
   this.beforeEach(async function () {
     const Liqtroller = await ethers.getContractFactory('Liqtroller')
-    liqtroller = await Liqtroller.deploy(signers[0].address)
+    liqtroller = await Liqtroller.deploy(signers[0].address, 3)
   })
 
   it('deploy', async function () {
