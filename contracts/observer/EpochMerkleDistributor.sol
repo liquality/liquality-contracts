@@ -62,7 +62,7 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
     }
 
     function batchClaim(ClaimRequest[] calldata claimRequests) external override {
-        // Can only batch claim for 5 epoch at a go, to avoid running out of gas
+        // Can only batch claim for 15 epoch at a go, to avoid running out of gas
         require(claimRequests.length <= 15, "MAX_BATCH_CLAIM_EXCEED");
 
         uint8 successClaims = 0;
