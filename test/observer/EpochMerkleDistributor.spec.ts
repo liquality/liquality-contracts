@@ -211,7 +211,7 @@ describe('EpochMerkleDistributor', function () {
       .withArgs(requests.length, requests.length - 1)
   })
 
-  it('should not claim more than 10 epochs in a batch', async function () {
+  it('should not claim more than 15 epochs in a batch', async function () {
     const requests: Claim[] = [
       {
         epoch: 1,
