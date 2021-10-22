@@ -27,13 +27,13 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
         return BitMaps.get(claimBitmaps[epoch], index);
     }
 
-    function singleClaim(
+    function _claim(
         uint256 epoch,
         uint256 index,
         address account,
         uint256 amount,
         bytes32[] memory merkleProof
-    ) private {
+    ) internal {
         // Epoch must be sealed and merkle root available before claiming
         require(IEpochMerkleProvider(merkleRootProvider).isEpochSealed(epoch), "EPOCH_NOT_SEALED");
         // Prevent duplicated claiming
@@ -51,39 +51,19 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
         emit Claim(epoch, index, account, amount);
     }
 
-    function claim(
-        uint256 epoch,
-        uint256 index,
-        address account,
-        uint256 amount,
-        bytes32[] calldata merkleProof
-    ) external override {
-        return singleClaim(epoch, index, account, amount, merkleProof);
+    function claim(ClaimRequest calldata claimRequests) external override {
+        return _claim(epoch, index, account, amount, merkleProof);
     }
 
     function batchClaim(ClaimRequest[] calldata claimRequests) external override {
-        // Can only batch claim for 15 epoch at a go, to avoid running out of gas
-        require(claimRequests.length <= 15, "MAX_BATCH_CLAIM_EXCEED");
-
-        uint8 successClaims = 0;
         for (uint256 i = 0; i < claimRequests.length; i++) {
-            // This trys as much to avoid reverts in the loop and only process batch inputs more likely to succeed
-            if (
-                !IEpochMerkleProvider(merkleRootProvider).isEpochSealed(claimRequests[i].epoch) ||
-                isClaimed(claimRequests[i].epoch, claimRequests[i].index)
-            ) {
-                continue;
-            } else {
-                singleClaim(
-                    claimRequests[i].epoch,
-                    claimRequests[i].index,
-                    claimRequests[i].account,
-                    claimRequests[i].amount,
-                    claimRequests[i].merkleProof
-                );
-                successClaims++;
-            }
+            _claim(
+                claimRequests[i].epoch,
+                claimRequests[i].index,
+                claimRequests[i].account,
+                claimRequests[i].amount,
+                claimRequests[i].merkleProof
+            );
         }
-        emit BatchClaim(claimRequests.length, successClaims);
     }
 }

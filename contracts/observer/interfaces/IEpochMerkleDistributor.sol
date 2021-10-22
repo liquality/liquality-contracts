@@ -22,18 +22,11 @@ interface IEpochMerkleDistributor {
     function isClaimed(uint256 epoch, uint256 index) external view returns (bool);
 
     /// Claim from the epoch, tokens to the provided address.
-    function claim(
-        uint256 epoch,
-        uint256 index,
-        address account,
-        uint256 amount,
-        bytes32[] calldata merkleProof
-    ) external;
+    function claim(ClaimRequest claimRequest) external;
 
     /// Batch claim from a number of epics, tokens to the provided address.
     function batchClaim(ClaimRequest[] calldata claimRequests) external;
 
     /// Event triggered when claim is successful.
     event Claim(uint256 epoch, uint256 index, address account, uint256 amount);
-    event BatchClaim(uint256 sizeOfBatch, uint256 successfulClaims);
 }

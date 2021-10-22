@@ -76,16 +76,11 @@ describe('EpochMerkleDistributor', function () {
     const signers = await ethers.getSigners()
     minter = signers[0]
     observers = signers.slice(1, 4)
-    users = signers.slice(4, 12)
+    users = signers.slice(4, 7)
     merkleData = generateMerkleData({
       [users[0].address]: 10,
       [users[1].address]: 20,
-      [users[2].address]: 30,
-      [users[3].address]: 40,
-      [users[4].address]: 50,
-      [users[5].address]: 60,
-      [users[6].address]: 70,
-      [users[7].address]: 80
+      [users[2].address]: 30
     })
   })
 
@@ -118,11 +113,6 @@ describe('EpochMerkleDistributor', function () {
     await merkleProvider.connect(observers[0]).submitMerkleRoot(1, merkleData.merkleRoot)
     await merkleProvider.connect(observers[1]).submitMerkleRoot(1, merkleData.merkleRoot)
     await merkleProvider.connect(observers[2]).submitMerkleRoot(1, merkleData.merkleRoot)
-
-    // Observers seal the epoch 3
-    await merkleProvider.connect(observers[0]).submitMerkleRoot(3, merkleData.merkleRoot)
-    await merkleProvider.connect(observers[1]).submitMerkleRoot(3, merkleData.merkleRoot)
-    await merkleProvider.connect(observers[2]).submitMerkleRoot(3, merkleData.merkleRoot)
   })
 
   it('claim successfully', async function () {
@@ -176,7 +166,7 @@ describe('EpochMerkleDistributor', function () {
         user: users[0]
       },
       {
-        epoch: 3,
+        epoch: 1,
         user: users[1]
       },
       {
@@ -188,99 +178,5 @@ describe('EpochMerkleDistributor', function () {
     await expect(merkleDistributor.connect(users[0]).batchClaim(claimRequests))
       .to.emit(merkleDistributor, 'BatchClaim')
       .withArgs(requests.length, requests.length)
-  })
-
-  it('claims successfully for only valid requests in a batch', async function () {
-    const requests: Claim[] = [
-      {
-        epoch: 3,
-        user: users[0]
-      },
-      {
-        epoch: 2, // Unsealed epoch
-        user: users[1]
-      },
-      {
-        epoch: 3,
-        user: users[2]
-      }
-    ]
-    const claimRequests = await batchClaimRequest(requests)
-    await expect(merkleDistributor.connect(users[0]).batchClaim(claimRequests))
-      .to.emit(merkleDistributor, 'BatchClaim')
-      .withArgs(requests.length, requests.length - 1)
-  })
-
-  it('should not claim more than 15 epochs in a batch', async function () {
-    const requests: Claim[] = [
-      {
-        epoch: 1,
-        user: users[0]
-      },
-      {
-        epoch: 1,
-        user: users[1]
-      },
-      {
-        epoch: 1,
-        user: users[2]
-      },
-      {
-        epoch: 1,
-        user: users[3]
-      },
-      {
-        epoch: 1,
-        user: users[4]
-      },
-      {
-        epoch: 3,
-        user: users[0]
-      },
-      {
-        epoch: 3,
-        user: users[1]
-      },
-      {
-        epoch: 3,
-        user: users[2]
-      },
-      {
-        epoch: 3,
-        user: users[3]
-      },
-      {
-        epoch: 3,
-        user: users[4]
-      },
-      {
-        epoch: 3,
-        user: users[5]
-      },
-      {
-        epoch: 3,
-        user: users[6]
-      },
-      {
-        epoch: 1,
-        user: users[5]
-      },
-      {
-        epoch: 1,
-        user: users[6]
-      },
-      {
-        epoch: 1,
-        user: users[7]
-      },
-      {
-        epoch: 3,
-        user: users[7]
-      }
-    ]
-    const claimRequests = await batchClaimRequest(requests)
-    await expect(merkleDistributor.connect(users[0]).batchClaim(claimRequests)).to.be.revertedWith(
-      'MAX_BATCH_CLAIM_EXCEED'
-    )
   })
 })
