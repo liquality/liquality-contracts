@@ -22,7 +22,7 @@ interface IEpochMerkleDistributor {
     function isClaimed(uint256 epoch, uint256 index) external view returns (bool);
 
     /// Claim from the epoch, tokens to the provided address.
-    function claim(ClaimRequest claimRequest) external;
+    function claim(ClaimRequest calldata claimRequest) external;
 
     /// Batch claim from a number of epics, tokens to the provided address.
     function batchClaim(ClaimRequest[] calldata claimRequests) external;

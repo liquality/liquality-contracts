@@ -51,8 +51,15 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
         emit Claim(epoch, index, account, amount);
     }
 
-    function claim(ClaimRequest calldata claimRequests) external override {
-        return _claim(epoch, index, account, amount, merkleProof);
+    function claim(ClaimRequest calldata claimRequest) external override {
+        return
+            _claim(
+                claimRequest.epoch,
+                claimRequest.index,
+                claimRequest.account,
+                claimRequest.amount,
+                claimRequest.merkleProof
+            );
     }
 
     function batchClaim(ClaimRequest[] calldata claimRequests) external override {

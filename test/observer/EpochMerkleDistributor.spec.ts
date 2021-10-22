@@ -35,18 +35,14 @@ describe('EpochMerkleDistributor', function () {
   async function claimTokens(epoch: number, user: SignerWithAddress) {
     const userClaim = merkleData.claims[user.address]
     const balanceBefore = await token.balanceOf(user.address)
-
-    const claim = await expect(
-      merkleDistributor
-        .connect(users[0])
-        .claim(
-          epoch,
-          userClaim.index,
-          user.address,
-          BigNumber.from(userClaim.amount),
-          userClaim.proof
-        )
-    )
+    const claimRequest: ClaimRequest = {
+      index: userClaim.index,
+      epoch: 1,
+      account: user.address,
+      amount: BigNumber.from(userClaim.amount),
+      merkleProof: userClaim.proof
+    }
+    const claim = await expect(merkleDistributor.connect(users[0]).claim(claimRequest))
       .to.emit(merkleDistributor, 'Claim')
       .withArgs(1, userClaim.index, user.address, userClaim.amount)
 
@@ -136,27 +132,31 @@ describe('EpochMerkleDistributor', function () {
   it('claiming with incorrect amount fails', async function () {
     const user = users[1]
     const userClaim = merkleData.claims[user.address]
-    await expect(
-      merkleDistributor
-        .connect(users[0])
-        .claim(
-          1,
-          userClaim.index,
-          user.address,
-          BigNumber.from(userClaim.amount).add(5),
-          userClaim.proof
-        )
-    ).to.be.revertedWith('MERKLE_PROOF_VERIFY_FAILED')
+    const claimRequest: ClaimRequest = {
+      index: userClaim.index,
+      epoch: 1,
+      account: user.address,
+      amount: BigNumber.from(userClaim.amount).add(5),
+      merkleProof: userClaim.proof
+    }
+    await expect(merkleDistributor.connect(users[0]).claim(claimRequest)).to.be.revertedWith(
+      'MERKLE_PROOF_VERIFY_FAILED'
+    )
   })
 
   it('claiming an unsealed epoch fails', async function () {
     const user = users[1]
     const userClaim = merkleData.claims[user.address]
-    await expect(
-      merkleDistributor
-        .connect(users[0])
-        .claim(2, userClaim.index, user.address, BigNumber.from(userClaim.amount), userClaim.proof)
-    ).to.be.revertedWith('EPOCH_NOT_SEALED')
+    const claimRequest: ClaimRequest = {
+      index: userClaim.index,
+      epoch: 2,
+      account: user.address,
+      amount: BigNumber.from(userClaim.amount),
+      merkleProof: userClaim.proof
+    }
+    await expect(merkleDistributor.connect(users[0]).claim(claimRequest)).to.be.revertedWith(
+      'EPOCH_NOT_SEALED'
+    )
   })
 
   it('claims successfully for batch request inputs', async function () {
@@ -176,7 +176,9 @@ describe('EpochMerkleDistributor', function () {
     ]
     const claimRequests = await batchClaimRequest(requests)
     await expect(merkleDistributor.connect(users[0]).batchClaim(claimRequests))
-      .to.emit(merkleDistributor, 'BatchClaim')
-      .withArgs(requests.length, requests.length)
+
+    expect(await merkleDistributor.isClaimed(1, claimRequests[0].index))
+    expect(await merkleDistributor.isClaimed(1, claimRequests[1].index))
+    expect(await merkleDistributor.isClaimed(1, claimRequests[2].index))
   })
 })
