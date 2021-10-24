@@ -27,13 +27,13 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
         return BitMaps.get(claimBitmaps[epoch], index);
     }
 
-    function claim(
+    function _claim(
         uint256 epoch,
         uint256 index,
         address account,
         uint256 amount,
-        bytes32[] calldata merkleProof
-    ) external override {
+        bytes32[] memory merkleProof
+    ) internal {
         // Epoch must be sealed and merkle root available before claiming
         require(IEpochMerkleProvider(merkleRootProvider).isEpochSealed(epoch), "EPOCH_NOT_SEALED");
         // Prevent duplicated claiming
@@ -49,5 +49,28 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
         require(IERC20(token).transfer(account, amount), "CLAIM_TRANSFER_FAILED");
 
         emit Claim(epoch, index, account, amount);
+    }
+
+    function claim(ClaimRequest calldata claimRequest) external override {
+        return
+            _claim(
+                claimRequest.epoch,
+                claimRequest.index,
+                claimRequest.account,
+                claimRequest.amount,
+                claimRequest.merkleProof
+            );
+    }
+
+    function batchClaim(ClaimRequest[] calldata claimRequests) external override {
+        for (uint256 i = 0; i < claimRequests.length; i++) {
+            _claim(
+                claimRequests[i].epoch,
+                claimRequests[i].index,
+                claimRequests[i].account,
+                claimRequests[i].amount,
+                claimRequests[i].merkleProof
+            );
+        }
     }
 }
