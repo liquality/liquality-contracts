@@ -35,7 +35,7 @@ contract EpochMerkleDistributor is IEpochMerkleDistributor {
         bytes32[] memory merkleProof
     ) internal {
         // Epoch must be sealed and merkle root available before claiming
-        require(IEpochMerkleProvider(merkleRootProvider).isEpochSealed(epoch), "EPOCH_NOT_SEALED");
+        require(IEpochMerkleProvider(merkleRootProvider).isEpochActive(epoch), "EPOCH_NOT_SEALED");
         // Prevent duplicated claiming
         require(!isClaimed(epoch, index), "ALREADY_CLAIMED");
 

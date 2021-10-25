@@ -21,6 +21,7 @@ describe('ObserverMerkleProvider', function () {
     const ObserverMerkleProviderFactory = await ethers.getContractFactory('ObserverMerkleProvider')
     mockLiqtroller = await deployMockContract(observers[0], Liqtroller.abi)
     mockLiqtroller.mock.epochSealThreshold.returns(3)
+    mockLiqtroller.mock.epochDuration.returns(15000)
     merkleProvider = <ObserverMerkleProvider>(
       await ObserverMerkleProviderFactory.deploy(mockLiqtroller.address)
     )
@@ -36,13 +37,13 @@ describe('ObserverMerkleProvider', function () {
   })
 
   it('seal epoch after enough submissions', async function () {
-    expect(await merkleProvider.isEpochSealed(1)).to.equal(false)
+    expect(await merkleProvider.isEpochActive(1)).to.equal(false)
     await merkleProvider.connect(observers[0]).submitMerkleRoot(1, ROOT_1)
     await merkleProvider.connect(observers[1]).submitMerkleRoot(1, ROOT_1)
     await expect(merkleProvider.connect(observers[2]).submitMerkleRoot(1, ROOT_1))
       .to.emit(merkleProvider, 'SealEpoch')
       .withArgs(1, ROOT_1)
-    expect(await merkleProvider.isEpochSealed(1)).to.equal(true)
+    expect(await merkleProvider.isEpochActive(1)).to.equal(true)
     expect(await merkleProvider.lastEpoch()).to.equal(1)
     expect(await merkleProvider.merkleRoot(1), ROOT_1)
   })

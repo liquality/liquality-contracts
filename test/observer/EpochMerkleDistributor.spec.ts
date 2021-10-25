@@ -95,6 +95,7 @@ describe('EpochMerkleDistributor', function () {
     )
     mockLiqtroller = await deployMockContract(observers[0], Liqtroller.abi)
     mockLiqtroller.mock.epochSealThreshold.returns(3)
+    mockLiqtroller.mock.epochDuration.returns(15000)
     merkleProvider = <ObserverMerkleProvider>(
       await ObserverMerkleProviderFactory.deploy(mockLiqtroller.address)
     )

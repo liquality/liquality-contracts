@@ -29,7 +29,9 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     /// Potentially usable?
     /// mapping(uint256 => bytes32[]) public epochMerkleRoots;
 
-    uint256 public lastEpoch = 0;
+    uint256 public lastEpoch;
+
+    uint256 public epochEndBlock;
 
     /// @dev Epochs must not be sealed and go forward.
     modifier onlyValidEpoch(uint256 epoch) {
@@ -46,8 +48,8 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     }
 
     /// @inheritdoc IEpochMerkleProvider
-    function isEpochSealed(uint256 epoch) external view override returns (bool) {
-        return sealedMerkleRoots[epoch] != bytes32(0x0);
+    function isEpochActive(uint256 epoch) external view override returns (bool) {
+        return sealedMerkleRoots[epoch] != bytes32(0x0) && block.number <= epochEndBlock;
     }
 
     /// @inheritdoc IEpochMerkleProvider
@@ -58,6 +60,7 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     function sealEpoch(uint256 epoch, bytes32 _merkleRoot) private {
         sealedMerkleRoots[epoch] = _merkleRoot;
         lastEpoch = epoch;
+        epochEndBlock = block.number + liqtroller.epochDuration();
         emit SealEpoch(epoch, _merkleRoot);
     }
 

@@ -39,6 +39,16 @@ task('deploy:ObserverMerkleProvider')
       )
     }
 
+    let initialEpochDuration: string | undefined = process.env.INITIAL_EPOCH_DURATION
+    if (taskArguments.duration) {
+      initialEpochDuration = taskArguments.threshold
+    }
+    if (!initialEpochDuration) {
+      throw new Error(
+        'Please set your INITIAL_EPOCH_SEAL_THRESHOLD in a .env file or pass it as command line argument e.g. --duration "15000"'
+      )
+    }
+
     let liqTokenAddress: string | undefined = process.env.LIQ_TOKEN_ADDRESS
     if (taskArguments.token) {
       liqTokenAddress = taskArguments.token
@@ -51,7 +61,11 @@ task('deploy:ObserverMerkleProvider')
 
     const liqtrollerFactory: Liqtroller__factory = await ethers.getContractFactory('Liqtroller')
     const liqtroller: Liqtroller = <Liqtroller>(
-      await liqtrollerFactory.deploy(liqtrollerAdmin, initialEpochSealThreshold)
+      await liqtrollerFactory.deploy(
+        liqtrollerAdmin,
+        initialEpochSealThreshold,
+        initialEpochDuration
+      )
     )
     await liqtroller.deployed()
     console.log('Liqtroller deployed to: ', liqtroller.address)
