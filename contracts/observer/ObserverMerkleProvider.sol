@@ -7,8 +7,6 @@ import "./interfaces/IEpochObserverHandler.sol";
 import "../controller/Liqtroller.sol";
 
 contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
-    Liqtroller public liqtroller;
-
     /// TODO: Should be unitroller. Such that upgrade is not required when the controller contract gets upgraded. See README
     constructor(address _liqtroller) {
         liqtroller = Liqtroller(_liqtroller);
@@ -30,6 +28,8 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     /// mapping(uint256 => bytes32[]) public epochMerkleRoots;
 
     uint256 public lastEpoch = 0;
+
+    Liqtroller public liqtroller;
 
     /// @dev Epochs must not be sealed and go forward.
     modifier onlyValidEpoch(uint256 epoch) {
