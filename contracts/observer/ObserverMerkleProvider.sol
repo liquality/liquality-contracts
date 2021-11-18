@@ -10,8 +10,9 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     Liqtroller public liqtroller;
 
     /// TODO: Should be unitroller. Such that upgrade is not required when the controller contract gets upgraded. See README
-    constructor(address _liqtroller) {
+    constructor(address _liqtroller, uint256 _epochEndBlock) {
         liqtroller = Liqtroller(_liqtroller);
+        epochEndBlock = _epochEndBlock;
     }
 
     /// @dev This is a simple implementation counting the merkle roots for an epoch.
@@ -36,7 +37,7 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     /// @dev Epochs must not be sealed and go forward.
     modifier onlyValidEpoch(uint256 epoch) {
         require(sealedMerkleRoots[epoch] == bytes32(0x0), "EPOCH_ALREADY_SEALED");
-        require(epoch > lastEpoch, "EPOCH_INVALID");
+        require(epoch == lastEpoch + 1, "EPOCH_INVALID");
         _;
     }
 
@@ -58,9 +59,10 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     }
 
     function sealEpoch(uint256 epoch, bytes32 _merkleRoot) private {
+        require(block.number > epochEndBlock, "EPOCH_NOT_READY_FOR_SEALING");
         sealedMerkleRoots[epoch] = _merkleRoot;
         lastEpoch = epoch;
-        epochEndBlock = block.number + liqtroller.epochDuration();
+        epochEndBlock = epochEndBlock + liqtroller.epochDuration();
         emit SealEpoch(epoch, _merkleRoot);
     }
 

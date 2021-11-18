@@ -18,6 +18,7 @@ task('deploy:ObserverMerkleProvider')
   .addOptionalParam('admin')
   .addOptionalParam('threshold')
   .addOptionalParam('token')
+  .addOptionalParam('epochEndBlock')
   .setAction(async function (taskArguments: TaskArguments, { ethers }) {
     let liqtrollerAdmin: string | undefined = process.env.LIQTROLLER_ADMIN
     if (taskArguments.admin) {
@@ -59,6 +60,16 @@ task('deploy:ObserverMerkleProvider')
       )
     }
 
+    let epochEndBlock: string | undefined = process.env.EPOCH_END_BLOCK
+    if (taskArguments.epochEndBlock) {
+      epochEndBlock = taskArguments.epochEndBlock
+    }
+    if (!epochEndBlock) {
+      throw new Error(
+        'Please set your EPOCH_END_BLOCK in a .env file or pass it as command line argument e.g. --epochEndBlock "13638873"'
+      )
+    }
+
     const liqtrollerFactory: Liqtroller__factory = await ethers.getContractFactory('Liqtroller')
     const liqtroller: Liqtroller = <Liqtroller>(
       await liqtrollerFactory.deploy(
@@ -73,7 +84,7 @@ task('deploy:ObserverMerkleProvider')
     const observerMerkleProviderFactory: ObserverMerkleProvider__factory =
       await ethers.getContractFactory('ObserverMerkleProvider')
     const observerMerkleProvider: ObserverMerkleProvider = <ObserverMerkleProvider>(
-      await observerMerkleProviderFactory.deploy(liqtroller.address)
+      await observerMerkleProviderFactory.deploy(liqtroller.address, epochEndBlock)
     )
     await observerMerkleProvider.deployed()
     console.log('ObserverMerkleProvider deployed to: ', observerMerkleProvider.address)
