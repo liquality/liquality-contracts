@@ -2,23 +2,26 @@
 pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./interfaces/ILiqProxy.sol";
+import "./interfaces/ILiqualityProxy.sol";
 
-contract LiqProxy is ILiqProxy {
+contract LiqualityProxy is ILiqualityProxy {
     using SafeERC20 for IERC20;
+
+    address public liqualityRouter;
 
     uint256 public gasReserve;
 
-    constructor() {
+    constructor(address _liqualityRouter) {
+        liqualityRouter = _liqualityRouter;
         gasReserve = 5_000;
     }
 
-    function execute(
-        address target,
-        address feeToken,
-        bytes calldata data,
-        FeeData[] calldata fees
-    ) external payable returns (bytes memory response) {
+    function execute(address target, bytes calldata data) external payable returns (bool success) {
+        // Check that the caller is the liquality router
+        if (liqualityRouter != msg.sender) {
+            revert LiqProxy__ExecutionNotAuthorized(liqualityRouter, msg.sender, target);
+        }
+
         // Check that the target is a valid contract.
         uint256 codeSize;
         assembly {
@@ -28,31 +31,20 @@ contract LiqProxy is ILiqProxy {
             revert LiqProxy__TargetInvalid(target);
         }
 
-        // handle ETH fees
-        if (feeToken == address(0)) {
-            uint256 totalFee = 0;
-            for (uint256 i = 0; i < fees.length; i++) {
-                totalFee += fees[i].fee;
-                fees[i].account.transfer(fees[i].fee);
-            }
-            require(totalFee <= msg.value, "requested fee exceeds provided value");
-        }
-        // handle ERC20 fees
-        else {
-            for (uint256 i = 0; i < fees.length; i++) {
-                IERC20(feeToken).safeTransferFrom(msg.sender, fees[i].account, fees[i].fee);
-            }
-        }
+        // Save the router address in memory. This local variable cannot be modified during the DELEGATECALL.
+        address liqualityRouter_ = liqualityRouter;
 
         // Reserve some gas to ensure that the function has enough to finish the execution.
         uint256 stipend = gasleft() - gasReserve;
 
         // Delegate call to the target contract.
-        bool success;
+        bytes memory response;
         (success, response) = target.delegatecall{gas: stipend}(data);
 
-        // Log the execution.
-        emit Execute(target, data, response);
+        // Check that the router has not been changed.
+        if (liqualityRouter_ != liqualityRouter) {
+            revert LiqProxy__RouterChanged(liqualityRouter_, liqualityRouter);
+        }
 
         // Check if the call was successful or not.
         if (!success) {
