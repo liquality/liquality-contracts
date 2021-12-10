@@ -7,10 +7,10 @@ interface ILiqualityRouter {
         uint256 fee;
     }
 
-    event Routed(address indexed exchange, address indexed tokenFrom, bytes data);
+    event Routed(address indexed target, address indexed tokenFrom, bytes data);
 
     function route(
-        address exchange,
+        address target,
         address tokenFrom,
         uint256 amount,
         bytes calldata data,

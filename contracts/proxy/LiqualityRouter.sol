@@ -17,7 +17,7 @@ contract LiqualityRouter is ILiqualityRouter {
     }
 
     function route(
-        address exchange,
+        address target,
         address tokenFrom,
         uint256 amount,
         bytes calldata data,
@@ -42,10 +42,10 @@ contract LiqualityRouter is ILiqualityRouter {
         }
 
         require(
-            liqualityProxy.execute{value: msg.value - totalFee}(exchange, data),
+            liqualityProxy.execute{value: msg.value - totalFee}(target, data),
             "proxy call failed"
         );
 
-        emit Routed(exchange, tokenFrom, data);
+        emit Routed(target, tokenFrom, data);
     }
 }
