@@ -10,8 +10,6 @@ contract LiqualityRouter is ILiqualityRouter {
     using LibTransfer for address;
     using SafeERC20 for IERC20;
 
-    uint256 public gasReserve;
-
     ILiqualityProxy public liqualityProxy;
 
     constructor(address _liqualityProxy) {
