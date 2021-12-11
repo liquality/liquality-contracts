@@ -7,13 +7,12 @@ import "./interfaces/ILiqualityProxy.sol";
 contract LiqualityProxy is ILiqualityProxy {
     using SafeERC20 for IERC20;
 
-    address public liqualityRouter;
+    uint256 public constant gasReserve = 5_000;
 
-    uint256 public gasReserve;
+    address public liqualityRouter;
 
     constructor(address _liqualityRouter) {
         liqualityRouter = _liqualityRouter;
-        gasReserve = 5_000;
     }
 
     function execute(address target, bytes calldata data) external payable returns (bool success) {
