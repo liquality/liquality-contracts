@@ -6,13 +6,13 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./MerkleDistributor.sol";
-import "./interfaces/IEpochMerkleDistributor.sol";
+import "./interfaces/IAirdropMerkleDistributor.sol";
 
-contract EpochMerkleDistributor is MerkleDistributor, IEpochMerkleDistributor {
+contract AirdropMerkleDistributor is MerkleDistributor, IAirdropMerkleDistributor {
     using BitMaps for BitMaps.BitMap;
 
     /// A packaed array of claimed account indexes, per epoch
-    mapping(uint256 => BitMaps.BitMap) private claimBitmaps;
+    BitMaps.BitMap private airDropClaimBitmap;
 
     constructor(address _merkleRootProvider, address _token)
         MerkleDistributor(_merkleRootProvider, _token)
@@ -21,21 +21,26 @@ contract EpochMerkleDistributor is MerkleDistributor, IEpochMerkleDistributor {
 
     }
 
-    function isClaimed(uint256 epoch, uint256 index) public view override returns (bool) {
-        return claimBitmaps[epoch].get(index);
+    function isClaimed(uint256, uint256 airdropIndex) public view override returns (bool) {
+        return airDropClaimBitmap.get(airdropIndex);
     }
 
-    function setClaimed(uint256 epoch, uint256 index) public override {
-        claimBitmaps[epoch].set(index);
+    function setClaimed(uint256, uint256 airdropIndex) public override {
+        airDropClaimBitmap.set(airdropIndex);
     }
 
-    function claim(ClaimRequest calldata claimRequest) external override {
+    function claim(AirdropClaimRequest calldata claimRequest) external override {
         bytes32 node = keccak256(
-            abi.encodePacked(claimRequest.index, claimRequest.account, claimRequest.amount)
+            abi.encodePacked(
+                claimRequest.index,
+                claimRequest.airdropIndex,
+                claimRequest.account,
+                claimRequest.amount
+            )
         );
         _claim(
             claimRequest.epoch,
-            claimRequest.index,
+            claimRequest.airdropIndex,
             claimRequest.account,
             claimRequest.amount,
             node,
@@ -43,18 +48,19 @@ contract EpochMerkleDistributor is MerkleDistributor, IEpochMerkleDistributor {
         );
     }
 
-    function batchClaim(ClaimRequest[] calldata claimRequests) external override {
+    function batchClaim(AirdropClaimRequest[] calldata claimRequests) external override {
         for (uint256 i = 0; i < claimRequests.length; i++) {
             bytes32 node = keccak256(
                 abi.encodePacked(
                     claimRequests[i].index,
+                    claimRequests[i].airdropIndex,
                     claimRequests[i].account,
                     claimRequests[i].amount
                 )
             );
             _claim(
                 claimRequests[i].epoch,
-                claimRequests[i].index,
+                claimRequests[i].airdropIndex,
                 claimRequests[i].account,
                 claimRequests[i].amount,
                 node,
