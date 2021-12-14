@@ -7,9 +7,14 @@ import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./MerkleDistributor.sol";
 import "./interfaces/IAirdropMerkleDistributor.sol";
+import "./interfaces/IVestedMerkleDistributor.sol";
 import "./interfaces/ISablier.sol";
 
-contract AirdropMerkleDistributor is MerkleDistributor, IAirdropMerkleDistributor {
+contract AirdropMerkleDistributor is
+    MerkleDistributor,
+    IAirdropMerkleDistributor,
+    IVestedMerkleDistributor
+{
     using BitMaps for BitMaps.BitMap;
 
     /// A packaed array of claimed account indexes, per epoch
@@ -88,5 +93,18 @@ contract AirdropMerkleDistributor is MerkleDistributor, IAirdropMerkleDistributo
                 VESTING_DURATION
             );
         }
+    }
+
+    function balanceOf(uint256 streamId, address who)
+        external
+        view
+        override
+        returns (uint256 balance)
+    {
+        return SABLIER.balanceOf(streamId, who);
+    }
+
+    function withdrawFromStream(uint256 streamId, uint256 funds) external override returns (bool) {
+        return SABLIER.withdrawFromStream(streamId, funds);
     }
 }
