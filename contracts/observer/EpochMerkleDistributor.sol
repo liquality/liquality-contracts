@@ -41,6 +41,10 @@ contract EpochMerkleDistributor is MerkleDistributor, IEpochMerkleDistributor {
             node,
             claimRequest.merkleProof
         );
+        require(
+            IERC20(token).transfer(claimRequest.account, claimRequest.amount),
+            "CLAIM_TRANSFER_FAILED"
+        );
     }
 
     function batchClaim(ClaimRequest[] calldata claimRequests) external override {
@@ -59,6 +63,10 @@ contract EpochMerkleDistributor is MerkleDistributor, IEpochMerkleDistributor {
                 claimRequests[i].amount,
                 node,
                 claimRequests[i].merkleProof
+            );
+            require(
+                IERC20(token).transfer(claimRequests[i].account, claimRequests[i].amount),
+                "CLAIM_TRANSFER_FAILED"
             );
         }
     }

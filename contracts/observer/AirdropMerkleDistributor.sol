@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./MerkleDistributor.sol";
 import "./interfaces/IAirdropMerkleDistributor.sol";
+import "./interfaces/ISablier.sol";
 
 contract AirdropMerkleDistributor is MerkleDistributor, IAirdropMerkleDistributor {
     using BitMaps for BitMaps.BitMap;
@@ -14,11 +15,13 @@ contract AirdropMerkleDistributor is MerkleDistributor, IAirdropMerkleDistributo
     /// A packaed array of claimed account indexes, per epoch
     BitMaps.BitMap private airDropClaimBitmap;
 
+    ISablier public constant SABLIER = ISablier(0xCD18eAa163733Da39c232722cBC4E8940b1D8888);
+    uint256 public constant VESTING_DURATION = 60 days;
+
     constructor(address _merkleRootProvider, address _token)
         MerkleDistributor(_merkleRootProvider, _token)
-    // solhint-disable-next-line no-empty-blocks
     {
-
+        IERC20(token).approve(address(SABLIER), type(uint256).max);
     }
 
     function isClaimed(uint256, uint256 airdropIndex) public view override returns (bool) {
@@ -38,6 +41,7 @@ contract AirdropMerkleDistributor is MerkleDistributor, IAirdropMerkleDistributo
                 claimRequest.amount
             )
         );
+
         _claim(
             claimRequest.epoch,
             claimRequest.airdropIndex,
@@ -45,6 +49,14 @@ contract AirdropMerkleDistributor is MerkleDistributor, IAirdropMerkleDistributo
             claimRequest.amount,
             node,
             claimRequest.merkleProof
+        );
+
+        SABLIER.createStream(
+            claimRequest.account,
+            claimRequest.amount,
+            token,
+            block.timestamp,
+            VESTING_DURATION
         );
     }
 
@@ -58,6 +70,7 @@ contract AirdropMerkleDistributor is MerkleDistributor, IAirdropMerkleDistributo
                     claimRequests[i].amount
                 )
             );
+
             _claim(
                 claimRequests[i].epoch,
                 claimRequests[i].airdropIndex,
@@ -65,6 +78,14 @@ contract AirdropMerkleDistributor is MerkleDistributor, IAirdropMerkleDistributo
                 claimRequests[i].amount,
                 node,
                 claimRequests[i].merkleProof
+            );
+
+            SABLIER.createStream(
+                claimRequests[i].account,
+                claimRequests[i].amount,
+                token,
+                block.timestamp,
+                VESTING_DURATION
             );
         }
     }
