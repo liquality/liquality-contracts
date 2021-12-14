@@ -95,7 +95,7 @@ contract AirdropMerkleDistributor is
         }
     }
 
-    function balanceOf(uint256 streamId, address who)
+    function getPendingAmount(uint256 streamId, address who)
         external
         view
         override
@@ -104,7 +104,11 @@ contract AirdropMerkleDistributor is
         return SABLIER.balanceOf(streamId, who);
     }
 
-    function withdrawFromStream(uint256 streamId, uint256 funds) external override returns (bool) {
+    function withdrawPendingAmount(uint256 streamId, uint256 funds)
+        external
+        override
+        returns (bool)
+    {
         return SABLIER.withdrawFromStream(streamId, funds);
     }
 }
