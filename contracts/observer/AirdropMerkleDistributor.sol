@@ -66,7 +66,7 @@ contract AirdropMerkleDistributor is
     }
 
     function batchClaim(AirdropClaimRequest[] calldata claimRequests) external override {
-        uint256 vestingDuration = block.timestamp + VESTING_DURATION;
+        uint256 vestingEnd = block.timestamp + VESTING_DURATION;
 
         for (uint256 i = 0; i < claimRequests.length; i++) {
             bytes32 node = keccak256(
@@ -92,7 +92,7 @@ contract AirdropMerkleDistributor is
                 claimRequests[i].amount,
                 token,
                 block.timestamp,
-                vestingDuration
+                vestingEnd
             );
         }
     }
