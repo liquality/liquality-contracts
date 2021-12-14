@@ -41,9 +41,6 @@ abstract contract MerkleDistributor is IMerkleDistributor {
         // set claimed bit to avoid duplicate claims
         setClaimed(epoch, index);
 
-        // transfer tokens
-        require(IERC20(token).transfer(account, amount), "CLAIM_TRANSFER_FAILED");
-
         emit Claim(epoch, index, account, amount);
     }
 }
