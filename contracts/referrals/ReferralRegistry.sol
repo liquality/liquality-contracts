@@ -13,7 +13,9 @@ contract ReferralRegistry is IReferralRegistry {
     mapping(address => Referral) private referralMap;
 
     modifier onlyController() {
-        if (msg.sender != controller) revert OnlyControllerAllowed();
+        if (msg.sender != controller) {
+            revert OnlyControllerAllowed();
+        }
         _;
     }
 
