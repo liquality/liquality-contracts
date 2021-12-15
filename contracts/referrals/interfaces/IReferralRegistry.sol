@@ -3,7 +3,7 @@ pragma solidity >=0.8.10;
 
 struct Referral {
     address referrer;
-    uint256 blockNumber;
+    uint96 blockNumber; // 22 bytes so it packs
 }
 
 interface IReferralRegistry {

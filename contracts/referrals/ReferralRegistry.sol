@@ -28,9 +28,17 @@ contract ReferralRegistry is IReferralRegistry {
 
     /// @inheritdoc IReferralRegistry
     function registerReferral(address referrer, address referee) public onlyController {
-        if (referrer == address(0) || referee == address(0)) revert InvalidAddress();
-        if (referrer == referee) revert RefferringSelfNotAllowed();
-        if (referralMap[referee].referrer != address(0)) revert RefereeAlreadyRegistered();
+        if (referrer == address(0) || referee == address(0)) {
+            revert InvalidAddress();
+        }
+
+        if (referrer == referee) {
+            revert RefferringSelfNotAllowed();
+        }
+
+        if (referralMap[referee].referrer != address(0)) {
+            revert RefereeAlreadyRegistered();
+        }
 
         referralMap[referee] = Referral({referrer: referrer, blockNumber: block.number});
 
