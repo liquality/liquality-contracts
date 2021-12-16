@@ -11,18 +11,25 @@ import "./LiqtrollerStorage.sol";
 /// 2. Copies over any storage variables from pervious controller version
 
 contract Liqtroller is ILiqtroller, LiqtrollerStorageV1 {
-    constructor(address _admin, uint256 initialEpochSealThreshold) {
+    constructor(
+        address _admin,
+        uint256 _epochSealThreshold,
+        uint256 _epochDuration
+    ) {
         admin = _admin;
-        epochSealThreshold = initialEpochSealThreshold;
+        epochSealThreshold = _epochSealThreshold;
+        epochDuration = _epochDuration;
     }
 
     /// @inheritdoc ILiqtroller
-    function _setEpochSealThreshold(uint256 newEpochSealThreshold) public override {
-        // Check caller is admin
-        require(msg.sender == admin, "only admin can set epoch seal threshold");
-
-        uint256 oldEpochSealThreshold = epochSealThreshold;
+    function setEpochSealThreshold(uint256 newEpochSealThreshold) public override onlyAdmin {
+        emit NewEpochSealThreshold(epochSealThreshold, newEpochSealThreshold);
         epochSealThreshold = newEpochSealThreshold;
-        emit NewEpochSealThreshold(oldEpochSealThreshold, newEpochSealThreshold);
+    }
+
+    /// @inheritdoc ILiqtroller
+    function setEpochDuration(uint256 newEpochDuration) public override onlyAdmin {
+        emit NewEpochDuration(epochDuration, newEpochDuration);
+        epochDuration = newEpochDuration;
     }
 }

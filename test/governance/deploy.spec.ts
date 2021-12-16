@@ -11,7 +11,7 @@ describe('Governance Deploy', function () {
   })
 
   it('can deploy', async function () {
-    const { liq, timelock, delegate, delegator } = await deployGovernance(signers[0].address)
+    const { timelock, delegate, delegator } = await deployGovernance(signers[0].address)
     const adminTx = await delegate.populateTransaction.admin()
     const admin = await delegator.provider.call({
       to: delegator.address,
