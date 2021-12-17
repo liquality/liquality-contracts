@@ -4,7 +4,7 @@
 
 pragma solidity >=0.8.4;
 
-import "./LiqStaking.sol";
+import "../LiqStaking.sol";
 
 contract MockStaking is LiqStaking {
     constructor(IERC20 liq) LiqStaking(liq) {}

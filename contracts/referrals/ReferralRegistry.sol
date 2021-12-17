@@ -42,7 +42,7 @@ contract ReferralRegistry is IReferralRegistry {
             revert RefereeAlreadyRegistered();
         }
 
-        referralMap[referee] = Referral({referrer: referrer, blockNumber: block.number});
+        referralMap[referee] = Referral({referrer: referrer, blockNumber: uint96(block.number)});
 
         emit ReferralRegistered(referrer, referee);
     }

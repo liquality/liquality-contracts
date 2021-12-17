@@ -17,19 +17,6 @@
 //# 0 +--------+------> time
 //#       maxtime (5 years?)
 
-//Notes :
-//Admin should be the governance contract
-//Check uint128 addiotions for safeMaths
-//Add ; to all lines
-//confirm variable naming
-//remove duplicate functions
-//Add @dev; @notice to all functions
-//Update comment descriptions
-//Add reentrancy guard
-//Refactor assets for modifier
-//Refactor out all binary search into a func
-// Implement set min and max lock
-
 pragma solidity >=0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -38,10 +25,7 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ERC20NonTransfer.sol";
-import "./IStake.sol";
-
-// REMOVE
-import "hardhat/console.sol";
+import "./interfaces/IStake.sol";
 
 contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, IStake {
     using SafeERC20 for IERC20;
@@ -164,7 +148,7 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
     // @notice : Get staking info for a user
     // @param account : Address of the user wallet
     // @returns : Staking info
-    function stakeInfo(address account) external view returns (Stake memory) {
+    function stakingInfo(address account) external view returns (Stake memory) {
         return stakings[account];
     }
 
@@ -364,21 +348,6 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
         emit Supply(supplyBefore, supplyBefore + amount);
     }
 
-    // @notice : Stake `amount` tokens for `account` and add to the lock
-    // @dev Anyone (even a smart contract) can deposit for someone else, but
-    // cannot extend their locktime and deposit for a brand new user
-    // @param account: User's wallet address
-    // @param amount: Amount to stake
-    function addStakeFor(address account, uint256 amount) external {
-        Stake memory stakeInfo = stakings[account];
-
-        require(amount > 0, "Cannot stake a 0 amount");
-        require(stakeInfo.amount > 0, "No existing lock found");
-        require(stakeInfo.lockEnd > block.timestamp, "Cannot add to expired lock.");
-
-        _depositFor(account, amount, 0, stakings[account], DEPOSIT_FOR_TYPE);
-    }
-
     // @notice Deposit `amount` tokens for `msg.sender` and lock until `_unlock_time`
     // @param account User's wallet address
     // @param unlockTime : Epoch time when tokens unlock, rounded down to whole weeks
@@ -493,7 +462,7 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
     // @param account User wallet address
     // @param blockTS Epoch time to return voting power at
     // @return User voting power
-    function balanceOf(address account, uint256 blockTS) public view returns (uint256) {
+    function balanceOf(address account, uint256 blockTS) external view returns (uint256) {
         if (blockTS == 0) {
             blockTS = block.timestamp;
         }

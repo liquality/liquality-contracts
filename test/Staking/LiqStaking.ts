@@ -2,7 +2,6 @@ import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address'
 
 import { MockStaking } from '../../typechain/MockStaking'
-import { LiqStaking } from '../../typechain/LiqStaking'
 import { LiqualityToken } from '../../typechain'
 import { expect } from 'chai'
 
@@ -35,18 +34,6 @@ describe('Liquality Statking', function () {
     await this.liqToken.connect(this.signers.account2).approve(this.staking.address, testAmount)
   })
 
-  // It deposits & gets voting power after deposit
-  // it gets the right voting power for the given duration
-  // It can withdraw after unlock time and withdraws the right amount and voting power is zero and staking amount is zero
-  // It returns the right balance
-  // Only admin can perform admin operations
-  // only whitelisted contracts and EOA can interact
-  // User can increase stake amount
-  //  user can increase stake unlock time
-  // It can increase staking amount
-  // It can increase lock time
-  // Voting power decrease with time
-
   it('Stakes and gets voting power', async function () {
     const { account1 } = this.signers
 
@@ -59,7 +46,7 @@ describe('Liquality Statking', function () {
       .withArgs(0, 500)
 
     await expect((await this.staking.supply()).toNumber()).to.eq(500)
-    const stakeInfo = await this.staking.stakeInfo(account1.address)
+    const stakeInfo = await this.staking.stakingInfo(account1.address)
     expect(stakeInfo.amount.toNumber()).to.eq(500)
   })
 
@@ -78,28 +65,25 @@ describe('Liquality Statking', function () {
     const { account2 } = this.signers
 
     const currentTs = await this.staking.getCurrentTs()
-    await expect(
-      this.staking.connect(account2).addStakeNoMinLimit(500, currentTs.toNumber() + 5)
-    ).to.emit(this.staking.address, 'StakeAdded')
+    await this.staking.connect(account2).addStakeNoMinLimit(500, currentTs.toNumber() + 5)
 
-    // await sleep(5000)
-    //
-    // await expect(this.staking.connect(account2).removeStake())
-    //   .to.emit(this.staking, "StakeRemoved")
-    //   .emit(this.staking, 'Supply').withArgs(500, 0)
-    // const stakeInfo = await this.staking.stakeInfo(account2.address)
-    // expect(stakeInfo.amount.toNumber()).to.eq(0)
-    //
-    // const balance = await this.staking.methods.balanceOf(account2.address, 0).call()
-    // console.log("Staking >> ", balance)
+    await sleep(5000)
+
+    await expect(this.staking.connect(account2).removeStake())
+      .to.emit(this.staking, 'StakeRemoved')
+      .emit(this.staking, 'Supply')
+      .withArgs(500, 0)
+
+    const stakeInfo = await this.staking.stakingInfo(account2.address)
+    expect(stakeInfo.amount.toNumber()).to.eq(0)
   })
 
   it('does not transfer', async function () {
     const { account2, account1 } = this.signers
 
     const currentTs = await this.staking.getCurrentTs()
-    const unlockTime = currentTs.toNumber() + 5
-    await this.staking.connect(account2).addStakeNoMinLimit(500, unlockTime)
+    const unlockTime = currentTs.toNumber() + 86400 * 31 // 31 days
+    await this.staking.connect(account2).addStake(500, unlockTime)
     await expect(this.staking.connect(account2).transfer(account1.address, 200)).to.revertedWith(
       'ERC20NonTransferable: Transfer operation disabled for staked tokens'
     )
@@ -109,8 +93,8 @@ describe('Liquality Statking', function () {
     const { account2, account1 } = this.signers
 
     const currentTs = await this.staking.getCurrentTs()
-    const unlockTime = currentTs.toNumber() + 5
-    await this.staking.connect(account2).addStakeNoMinLimit(500, unlockTime)
+    const unlockTime = currentTs.toNumber() + 86400 * 31 // 31 days
+    await this.staking.connect(account2).addStake(500, unlockTime)
     await expect(this.staking.connect(account2).approve(account1.address, 200)).to.revertedWith(
       'ERC20NonTransferable: Approval operation disabled for staked tokens'
     )

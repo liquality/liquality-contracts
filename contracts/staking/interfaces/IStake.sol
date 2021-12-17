@@ -1,3 +1,7 @@
+// SPDX-License-Identifier:MIT
+
+//@title Stake interface
+
 pragma solidity >=0.8.4;
 
 interface IStake {
