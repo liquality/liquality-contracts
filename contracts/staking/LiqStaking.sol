@@ -49,29 +49,29 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
         uint256 blk;
     }
 
-    uint128 constant DEPOSIT_FOR_TYPE = 0;
-    uint128 constant CREATE_LOCK_TYPE = 1;
-    uint128 constant INCREASE_LOCK_AMOUNT = 2;
-    uint128 constant INCREASE_UNLOCK_TIME = 3;
-
     uint256 public epoch;
     uint256 public supply;
 
-    uint256 public WEEK = 7 * 86400; // all future times are rounded by week
-    uint256 public MONTH = 30 * 86400;
-    uint256 public YEAR = 365 * 86400;
-    uint256 public MINTIME;
-    uint256 public MAXTIME;
-    uint256 public MULTIPLIER = 10**18;
+    uint256 public minTime;
+    uint256 public maxTime;
+    uint256 constant WEEK = 7 * 86400; // all future times are rounded by week
+    uint256 constant MULTIPLIER = 10**18;
 
     //@notice Record of user account staking
     mapping(address => Stake) public stakings;
     mapping(address => bool) public whitelisted;
-
-    Point[100000000000000000000000000000] public pointHistory; // epoch -> unsigned point
     mapping(address => uint256) public lastUserPointIndex; // Last user point index
     mapping(address => Point[1000000000]) public userPointHistory; // user -> Point[user_epoch]
     mapping(uint256 => uint128) public slopeChanges; // time -> signed slope change
+
+    enum ReqType {
+        CREATE_LOCK_TYPE,
+        INCREASE_LOCK_AMOUNT,
+        INCREASE_UNLOCK_TIME
+    }
+    ReqType constant reqTypes = ReqType.CREATE_LOCK_TYPE;
+
+    Point[100000000000000000000000000000] public pointHistory; // epoch -> unsigned point
 
     // Modifier : Only allow un-staking if lock period is fully reached
     modifier MustCallFromEOAOrWhitelisted(address receiver) {
@@ -91,18 +91,18 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
     constructor(IERC20 liq) {
         Liq = liq;
         pointHistory[0] = Point(0, 0, block.timestamp, block.number);
-        MINTIME = 30 * 86400; // Starting with min lock time as 1month
-        MAXTIME = 5 * 365 * 86400; // Starting with min lock time as 5years
+        minTime = 30 * 86400; // Starting with min lock time as 1month
+        maxTime = 5 * 365 * 86400; // Starting with min lock time as 5years
     }
 
     function setMinLock(uint32 minLock) external override onlyOwner {
         uint256 minLockInSeconds = minLock * 86400;
         require(
-            minLockInSeconds > 0 && minLockInSeconds < MAXTIME,
+            minLockInSeconds > 0 && minLockInSeconds < maxTime,
             "INVALIDLOCK : Min lock time must be greater than zero and less than max lock"
         );
-        uint256 prevMinLock = MINTIME;
-        MINTIME = minLockInSeconds;
+        uint256 prevMinLock = minTime;
+        minTime = minLockInSeconds;
         emit MinLockUpdated(prevMinLock / 86400, minLock);
     }
 
@@ -110,11 +110,11 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
     function setMaxLock(uint32 maxLock) external override onlyOwner {
         uint256 maxLockInSeconds = maxLock * 86400;
         require(
-            maxLockInSeconds > 0 && maxLockInSeconds > MINTIME,
+            maxLockInSeconds > 0 && maxLockInSeconds > minTime,
             "INVALIDLOCK : Lock time must be greater than zero and greater than min lock"
         );
-        uint256 prevMaxLock = MAXTIME;
-        MAXTIME = maxLockInSeconds;
+        uint256 prevMaxLock = maxTime;
+        maxTime = maxLockInSeconds;
         emit MaxLockUpdated(prevMaxLock / 86400, maxLock);
     }
 
@@ -172,13 +172,13 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
             // Calculate slopes and biases
             // Kept at zero when they have to
             if (prevStake.lockEnd > block.timestamp && prevStake.amount > 0) {
-                prevPoint.slope = SafeCast.toUint128(prevStake.amount / MAXTIME);
+                prevPoint.slope = SafeCast.toUint128(prevStake.amount / maxTime);
                 prevPoint.bias =
                     prevPoint.slope *
                     SafeCast.toUint128(prevStake.lockEnd - block.timestamp);
             }
             if (newStake.lockEnd > block.timestamp && newStake.amount > 0) {
-                newPoint.slope = SafeCast.toUint128(newStake.amount / MAXTIME);
+                newPoint.slope = SafeCast.toUint128(newStake.amount / maxTime);
                 newPoint.bias =
                     newPoint.slope *
                     SafeCast.toUint128(newStake.lockEnd - block.timestamp);
@@ -324,7 +324,7 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
         uint256 amount,
         uint256 unlockTime,
         Stake memory stakeInfo,
-        uint128 actionType
+        ReqType actionType
     ) internal {
         Stake memory stakedBal = stakeInfo;
         uint256 supplyBefore = supply;
@@ -344,7 +344,7 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
         if (amount != 0) {
             Liq.safeTransferFrom(account, address(this), amount);
         }
-        emit StakeAdded(account, amount, stakeInfo.lockEnd, actionType, block.timestamp); // import curve types here
+        emit StakeAdded(account, amount, stakeInfo.lockEnd, uint8(actionType), block.timestamp); // import curve types here
         emit Supply(supplyBefore, supplyBefore + amount);
     }
 
@@ -361,12 +361,12 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
         require(amount > 0, "Amount not valid"); // dev: need non-zero value
         require(stakeInfo.amount == 0, "Withdraw old tokens first");
         require(
-            unlockTime >= block.timestamp + MINTIME,
+            unlockTime >= block.timestamp + minTime,
             "unlock time must be greater than minimun lock time"
         );
-        require(unlockTime <= block.timestamp + MAXTIME, "Unlock time cannot exceed max lock");
+        require(unlockTime <= block.timestamp + maxTime, "Unlock time cannot exceed max lock");
 
-        _depositFor(msg.sender, amount, unlockTime, stakeInfo, CREATE_LOCK_TYPE);
+        _depositFor(msg.sender, amount, unlockTime, stakeInfo, ReqType.CREATE_LOCK_TYPE);
     }
 
     // @notice Deposit `amount` additional tokens for `msg.sender`
@@ -383,7 +383,7 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
         require(stakeInfo.amount > 0, "No existing lock found");
         require(stakeInfo.lockEnd > block.timestamp, "Cannot add to expired lock. Withdraw");
 
-        _depositFor(msg.sender, amount, 0, stakeInfo, INCREASE_LOCK_AMOUNT);
+        _depositFor(msg.sender, amount, 0, stakeInfo, ReqType.INCREASE_LOCK_AMOUNT);
     }
 
     // @notice Extend the unlock time for `msg.sender` to `unlockTime`
@@ -399,9 +399,9 @@ contract LiqStaking is ERC20NonTransferable("LIQ Staking", "sLIQ"), Ownable, ISt
         require(stakeInfo.lockEnd > block.timestamp, "Lock expired");
         require(stakeInfo.amount > 0, "Nothing is locked");
         require(unlockTimeInWeeks > stakeInfo.lockEnd, "Can only increase lock duration");
-        require(stakeInfo.lockEnd <= block.timestamp + MAXTIME, "Voting lock can be 4 years max");
+        require(stakeInfo.lockEnd <= block.timestamp + maxTime, "Voting lock can be 4 years max");
 
-        _depositFor(msg.sender, 0, unlockTimeInWeeks, stakeInfo, INCREASE_UNLOCK_TIME);
+        _depositFor(msg.sender, 0, unlockTimeInWeeks, stakeInfo, ReqType.INCREASE_UNLOCK_TIME);
     }
 
     // @notice Withdraw all tokens for `msg.sender`

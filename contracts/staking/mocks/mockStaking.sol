@@ -18,8 +18,8 @@ contract MockStaking is LiqStaking {
 
         require(amount > 0, "Amount not valid"); // dev: need non-zero value
         require(stakeInfo.amount == 0, "Withdraw old tokens first");
-        require(unlockTime <= block.timestamp + MAXTIME, "Unlock time cannot exceed max lock");
+        require(unlockTime <= block.timestamp + maxTime, "Unlock time cannot exceed max lock");
 
-        _depositFor(msg.sender, amount, unlockTime, stakeInfo, CREATE_LOCK_TYPE);
+        _depositFor(msg.sender, amount, unlockTime, stakeInfo, ReqType.CREATE_LOCK_TYPE);
     }
 }

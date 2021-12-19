@@ -31,7 +31,7 @@ interface IStake {
         address indexed staker,
         uint256 amount,
         uint256 indexed locktime,
-        uint128 actionType,
+        uint8 actionType,
         uint256 timeStamp
     ); // Deposit
 
