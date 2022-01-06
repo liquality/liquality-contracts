@@ -1,4 +1,5 @@
 import '@nomiclabs/hardhat-waffle'
+import '@nomiclabs/hardhat-vyper'
 import '@typechain/hardhat'
 import 'hardhat-gas-reporter'
 import 'hardhat-watcher'
@@ -95,6 +96,9 @@ const config: HardhatUserConfig = {
         runs: 800
       }
     }
+  },
+  vyper: {
+    version: '0.2.4'
   },
   typechain: {
     outDir: 'typechain',
