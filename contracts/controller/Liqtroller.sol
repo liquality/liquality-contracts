@@ -14,22 +14,64 @@ contract Liqtroller is ILiqtroller, LiqtrollerStorageV1 {
     constructor(
         address _admin,
         uint256 _epochSealThreshold,
-        uint256 _epochDuration
+        uint256 _epochDuration,
+        uint256 _stakeAmount,
+        uint256 _stakeDuration,
+        uint256 _stakeDurationTreshold
     ) {
         admin = _admin;
         epochSealThreshold = _epochSealThreshold;
         epochDuration = _epochDuration;
+        stakeAmount = _stakeAmount;
+        stakeDuration = _stakeDuration;
+        stakeDurationTreshold = _stakeDurationTreshold;
     }
 
     /// @inheritdoc ILiqtroller
-    function setEpochSealThreshold(uint256 newEpochSealThreshold) public override onlyAdmin {
+    function setEpochSealThreshold(uint256 newEpochSealThreshold) external override onlyAdmin {
         emit NewEpochSealThreshold(epochSealThreshold, newEpochSealThreshold);
         epochSealThreshold = newEpochSealThreshold;
     }
 
     /// @inheritdoc ILiqtroller
-    function setEpochDuration(uint256 newEpochDuration) public override onlyAdmin {
+    function setEpochDuration(uint256 newEpochDuration) external override onlyAdmin {
         emit NewEpochDuration(epochDuration, newEpochDuration);
         epochDuration = newEpochDuration;
+    }
+
+    /// @inheritdoc ILiqtroller
+    function setStakeAmount(uint256 newStakeAmount) external override onlyAdmin {
+        emit NewStakeAmount(stakeAmount, newStakeAmount);
+        stakeAmount = newStakeAmount;
+    }
+
+    /// @inheritdoc ILiqtroller
+    function setStakeDuration(uint256 newStakeDuration) external override onlyAdmin {
+        emit NewStakeDuration(stakeDuration, newStakeDuration);
+        stakeDuration = newStakeDuration;
+    }
+
+    /// @inheritdoc ILiqtroller
+    function setStakeDurationThreshold(uint256 newStakeDurationThreshold)
+        external
+        override
+        onlyAdmin
+    {
+        emit NewStakeDurationThreshold(stakeDurationTreshold, newStakeDurationThreshold);
+        stakeDurationTreshold = newStakeDurationThreshold;
+    }
+
+    /// @inheritdoc ILiqtroller
+    function getStakeParameters()
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (stakeAmount, stakeDuration, stakeDurationTreshold);
     }
 }

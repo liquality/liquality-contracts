@@ -19,6 +19,9 @@ task('deploy:ObserverMerkleProvider')
   .addOptionalParam('threshold')
   .addOptionalParam('token')
   .addOptionalParam('epochEndBlock')
+  .addOptionalParam('stakeAmount')
+  .addOptionalParam('stakeDuration')
+  .addOptionalParam('stakeDurationThreshold')
   .setAction(async function (taskArguments: TaskArguments, { ethers }) {
     let liqtrollerAdmin: string | undefined = process.env.LIQTROLLER_ADMIN
     if (taskArguments.admin) {
@@ -70,12 +73,45 @@ task('deploy:ObserverMerkleProvider')
       )
     }
 
+    let stakeAmount: string | undefined = process.env.STAKE_AMOUNT
+    if (taskArguments.stakeAmount) {
+      stakeAmount = taskArguments.stakeAmount
+    }
+    if (!stakeAmount) {
+      throw new Error(
+        'Please set your STAKE_AMOUNT in a .env file or pass it as command line argument e.g. --stakeAmount "100"'
+      )
+    }
+
+    let stakeDuration: string | undefined = process.env.STAKE_DURATION
+    if (taskArguments.stakeDuration) {
+      stakeDuration = taskArguments.stakeDuration
+    }
+    if (!stakeDuration) {
+      throw new Error(
+        'Please set your STAKE_DURATION in a .env file or pass it as command line argument e.g. --stakeDuration "50"'
+      )
+    }
+
+    let stakeDurationThreshold: string | undefined = process.env.STAKE_DURATION_THRESHOLD
+    if (taskArguments.stakeDurationThreshold) {
+      stakeDurationThreshold = taskArguments.stakeDurationThreshold
+    }
+    if (!stakeDurationThreshold) {
+      throw new Error(
+        'Please set your STAKE_DURATION_THRESHOLD in a .env file or pass it as command line argument e.g. --stakeDurationThreshold "20"'
+      )
+    }
+
     const liqtrollerFactory: Liqtroller__factory = await ethers.getContractFactory('Liqtroller')
     const liqtroller: Liqtroller = <Liqtroller>(
       await liqtrollerFactory.deploy(
         liqtrollerAdmin,
         initialEpochSealThreshold,
-        initialEpochDuration
+        initialEpochDuration,
+        stakeAmount,
+        stakeDuration,
+        stakeDurationThreshold
       )
     )
     await liqtroller.deployed()
@@ -84,7 +120,11 @@ task('deploy:ObserverMerkleProvider')
     const observerMerkleProviderFactory: ObserverMerkleProvider__factory =
       await ethers.getContractFactory('ObserverMerkleProvider')
     const observerMerkleProvider: ObserverMerkleProvider = <ObserverMerkleProvider>(
-      await observerMerkleProviderFactory.deploy(liqtroller.address, epochEndBlock)
+      await observerMerkleProviderFactory.deploy(
+        liqtroller.address,
+        liqtroller.address, // TODO: change with Observer Staking contract
+        epochEndBlock
+      )
     )
     await observerMerkleProvider.deployed()
     console.log('ObserverMerkleProvider deployed to: ', observerMerkleProvider.address)

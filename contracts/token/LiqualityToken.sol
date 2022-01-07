@@ -1,7 +1,7 @@
 // SPDX-License-Identifier:MIT
 pragma solidity >=0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/ILiqualityToken.sol";
 
 // Lightweight token modelled after UNI-LP:
 // https://github.com/Uniswap/uniswap-v2-core/blob/v1.0.1/contracts/UniswapV2ERC20.sol
@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 //   - An exposed `mint()` with minting role
 //   - An exposed `burn()`
 //   - ERC-3009 (`transferWithAuthorization()`)
-contract LiqualityToken is IERC20 {
+contract LiqualityToken is ILiqualityToken {
     // bytes32 private constant EIP712DOMAIN_HASH =
     // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
     bytes32 private constant EIP712DOMAIN_HASH =
@@ -57,6 +57,108 @@ contract LiqualityToken is IERC20 {
 
     constructor(address initialMinter) {
         _changeMinter(initialMinter);
+    }
+
+    function getChainId() public view returns (uint256 chainId) {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            chainId := chainid()
+        }
+    }
+
+    function getDomainSeparator() public view override returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(EIP712DOMAIN_HASH, NAME_HASH, VERSION_HASH, getChainId(), address(this))
+            );
+    }
+
+    function mint(address to, uint256 value) external override onlyMinter returns (bool) {
+        _mint(to, value);
+        return true;
+    }
+
+    function burn(uint256 value) external override returns (bool) {
+        _burn(msg.sender, value);
+        return true;
+    }
+
+    function approve(address spender, uint256 value) external override returns (bool) {
+        _approve(msg.sender, spender, value);
+        return true;
+    }
+
+    function transfer(address to, uint256 value) external override returns (bool) {
+        _transfer(msg.sender, to, value);
+        return true;
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 value
+    ) external override returns (bool) {
+        uint256 fromAllowance = allowance[from][msg.sender];
+        if (fromAllowance != type(uint256).max) {
+            // Allowance is implicitly checked with Solidity's underflow protection
+            allowance[from][msg.sender] = fromAllowance - value;
+        }
+        _transfer(from, to, value);
+        return true;
+    }
+
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external override {
+        require(deadline >= block.timestamp, "LIQ:AUTH_EXPIRED");
+
+        bytes32 encodeData = keccak256(
+            abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner], deadline)
+        );
+        nonces[owner] = nonces[owner] + 1;
+        _validateSignedData(owner, encodeData, v, r, s);
+
+        _approve(owner, spender, value);
+    }
+
+    function transferWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external override {
+        require(block.timestamp > validAfter, "LIQ:AUTH_NOT_YET_VALID");
+        require(block.timestamp < validBefore, "LIQ:AUTH_EXPIRED");
+        require(!authorizationState[from][nonce], "LIQ:AUTH_ALREADY_USED");
+
+        bytes32 encodeData = keccak256(
+            abi.encode(
+                TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
+                from,
+                to,
+                value,
+                validAfter,
+                validBefore,
+                nonce
+            )
+        );
+        _validateSignedData(from, encodeData, v, r, s);
+
+        authorizationState[from][nonce] = true;
+        emit AuthorizationUsed(from, nonce);
+
+        _transfer(from, to, value);
     }
 
     function _changeMinter(address newMinter) internal {
@@ -113,107 +215,5 @@ contract LiqualityToken is IERC20 {
         balanceOf[from] = balanceOf[from] - value;
         balanceOf[to] = balanceOf[to] + value;
         emit Transfer(from, to, value);
-    }
-
-    function getChainId() public view returns (uint256 chainId) {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            chainId := chainid()
-        }
-    }
-
-    function getDomainSeparator() public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(EIP712DOMAIN_HASH, NAME_HASH, VERSION_HASH, getChainId(), address(this))
-            );
-    }
-
-    function mint(address to, uint256 value) external onlyMinter returns (bool) {
-        _mint(to, value);
-        return true;
-    }
-
-    function burn(uint256 value) external returns (bool) {
-        _burn(msg.sender, value);
-        return true;
-    }
-
-    function approve(address spender, uint256 value) external override returns (bool) {
-        _approve(msg.sender, spender, value);
-        return true;
-    }
-
-    function transfer(address to, uint256 value) external override returns (bool) {
-        _transfer(msg.sender, to, value);
-        return true;
-    }
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    ) external override returns (bool) {
-        uint256 fromAllowance = allowance[from][msg.sender];
-        if (fromAllowance != type(uint256).max) {
-            // Allowance is implicitly checked with Solidity's underflow protection
-            allowance[from][msg.sender] = fromAllowance - value;
-        }
-        _transfer(from, to, value);
-        return true;
-    }
-
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
-        require(deadline >= block.timestamp, "LIQ:AUTH_EXPIRED");
-
-        bytes32 encodeData = keccak256(
-            abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner], deadline)
-        );
-        nonces[owner] = nonces[owner] + 1;
-        _validateSignedData(owner, encodeData, v, r, s);
-
-        _approve(owner, spender, value);
-    }
-
-    function transferWithAuthorization(
-        address from,
-        address to,
-        uint256 value,
-        uint256 validAfter,
-        uint256 validBefore,
-        bytes32 nonce,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
-        require(block.timestamp > validAfter, "LIQ:AUTH_NOT_YET_VALID");
-        require(block.timestamp < validBefore, "LIQ:AUTH_EXPIRED");
-        require(!authorizationState[from][nonce], "LIQ:AUTH_ALREADY_USED");
-
-        bytes32 encodeData = keccak256(
-            abi.encode(
-                TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
-                from,
-                to,
-                value,
-                validAfter,
-                validBefore,
-                nonce
-            )
-        );
-        _validateSignedData(from, encodeData, v, r, s);
-
-        authorizationState[from][nonce] = true;
-        emit AuthorizationUsed(from, nonce);
-
-        _transfer(from, to, value);
     }
 }
