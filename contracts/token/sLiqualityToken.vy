@@ -118,7 +118,7 @@ future_admin: public(address)
 def __init__(token_addr: address, _name: String[64], _symbol: String[32], _version: String[32]):
     """
     @notice Contract constructor
-    @param token_addr `ERC20CRV` token address
+    @param token_addr `ERC20SLIQ` token address
     @param _name Token name
     @param _symbol Token symbol
     @param _version Contract version - required for Aragon compatibility

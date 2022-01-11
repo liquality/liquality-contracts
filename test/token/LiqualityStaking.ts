@@ -3,7 +3,6 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-wit
 
 import { LiqualityToken } from '../../typechain'
 import { SLiqualityToken } from '../../typechain'
-import { UtilContract } from '../../typechain'
 import { expect } from 'chai'
 
 describe('Liquality Statking', function () {
@@ -22,8 +21,6 @@ describe('Liquality Statking', function () {
 
     const LiqualityTokenFactory = await ethers.getContractFactory('LiqualityToken')
     const SLiqualityTokenFactory = await ethers.getContractFactory('sLiqualityToken')
-    const UtilContractTokenFactory = await ethers.getContractFactory('UtilContract')
-    this.utilContract = <UtilContract>await UtilContractTokenFactory.deploy()
 
     this.liqToken = <LiqualityToken>await LiqualityTokenFactory.deploy(initialMinter)
     await this.liqToken.connect(this.signers.admin).mint(this.signers.account1.address, testAmount)
@@ -50,7 +47,9 @@ describe('Liquality Statking', function () {
   it('Stakes and gets voting power', async function () {
     const { account1 } = this.signers
 
-    const unlockTime = (await this.utilContract.getCurrentTs()).toNumber() + 31 * 86400
+    const unlockTime =
+      (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp +
+      31 * 86400
 
     await expect(this.staking.connect(account1).create_lock(500, unlockTime))
       .to.emit(this.staking, 'Deposit')
@@ -64,7 +63,9 @@ describe('Liquality Statking', function () {
 
   it('Cannot withdraw stake before unlock time', async function () {
     const { account1 } = this.signers
-    const unlockTime = (await this.utilContract.getCurrentTs()).toNumber() + 31 * 86400
+    const unlockTime =
+      (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp +
+      31 * 86400
     await this.staking.connect(account1).create_lock(500, unlockTime)
 
     await expect(this.staking.connect(account1).withdraw()).to.revertedWith(
