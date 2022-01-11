@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.4;
+pragma solidity 0.8.10;
 
-import "hardhat/console.sol";
 import "./interfaces/IEpochMerkleProvider.sol";
 import "./interfaces/IEpochObserverHandler.sol";
 import "../controller/Liqtroller.sol";
