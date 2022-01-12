@@ -1,14 +1,14 @@
 # @version 0.2.4
 """
-@title Voting Escrow
-@author Curve Finance
+@title LiqStaking Contract
+@author Liquality
 @license MIT
-@notice Votes have a weight depending on time, so that users are
-        committed to the future of (whatever they are voting for)
-@dev Vote weight decays linearly over time. Lock time cannot be
-     more than `MAXTIME` (4 years).
+@notice
+  Stakers get a corresponding sLIQ (vote power) for LIQ staked,
+  value of sLIQ minted is based on the staking duration.Votes have a weight depending on time,
+  so that users are committed to the future of (whatever they are voting for)
+@dev Vote weight decays linearly over time. Lock time cannot be more than `MAXTIME` (4 years).
 """
-
 # Voting escrow to have time-weighted votes
 # Votes have a weight depending on time, so that users are committed
 # to the future of (whatever they are voting for).
@@ -118,7 +118,7 @@ future_admin: public(address)
 def __init__(token_addr: address, _name: String[64], _symbol: String[32], _version: String[32]):
     """
     @notice Contract constructor
-    @param token_addr `ERC20CRV` token address
+    @param token_addr `ERC20SLIQ` token address
     @param _name Token name
     @param _symbol Token symbol
     @param _version Contract version - required for Aragon compatibility
