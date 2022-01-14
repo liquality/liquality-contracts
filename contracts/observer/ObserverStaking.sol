@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
-import "../token/interfaces/ILiqualityToken.sol";
 import "./interfaces/IObserverStaking.sol";
-
+import "../token/interfaces/ILiqualityToken.sol";
 import "../controller/Liqtroller.sol";
 
 contract ObserverStaking is IObserverStaking {
@@ -37,6 +36,10 @@ contract ObserverStaking is IObserverStaking {
         }
         delete stakes[observer];
         ILiqualityToken(token).burn(amount);
+        uint256 remainder = s.amount - amount;
+        if (remainder > 0) {
+            ILiqualityToken(token).transfer(observer, remainder);
+        }
         emit ObserverSlashed(observer, amount);
     }
 
