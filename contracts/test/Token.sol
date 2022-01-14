@@ -11,4 +11,9 @@ contract Token is ERC20 {
     ) ERC20(name, symbol) {
         _mint(msg.sender, initialSupply);
     }
+
+    function burn(uint256 value) external returns (bool) {
+        _burn(msg.sender, value);
+        return true;
+    }
 }
