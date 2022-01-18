@@ -543,10 +543,10 @@ def balanceOf(addr: address, _t: uint256 = block.timestamp) -> uint256:
 
 @external
 @view
-def balanceOfAt(addr: address, _block: uint256) -> uint256:
+def getpriorVotes(addr: address, _block: uint256) -> uint256:
     """
     @notice Measure voting power of `addr` at block height `_block`
-    @dev Adheres to MiniMe `balanceOfAt` interface: https://github.com/Giveth/minime
+    @dev Adheres to MiniMe `getpriorVotes` interface: https://github.com/Giveth/minime
     @param addr User's wallet address
     @param _block Block to calculate the voting power at
     @return Voting power

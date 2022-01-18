@@ -174,5 +174,5 @@ interface TimelockInterface {
 }
 
 interface SliqInterface {
-    function balanceOf(address account, uint blockNumber) external view returns (uint256);
+    function getpriorVotes(address account, uint blockNumber) external view returns (uint256);
 }
