@@ -3,6 +3,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-wit
 import { deployMockContract, MockContract } from '@ethereum-waffle/mock-contract'
 
 import Liqtroller from '../../artifacts/contracts/controller/Liqtroller.sol/Liqtroller.json'
+import ObserverStaking from '../../artifacts/contracts/observer/ObserverStaking.sol/ObserverStaking.json'
 import { ObserverMerkleProvider } from '../../typechain'
 import { EpochMerkleDistributor } from '../../typechain'
 import { Token } from '../../typechain/Token'
@@ -28,6 +29,7 @@ interface Claim {
 
 describe('EpochMerkleDistributor', function () {
   let mockLiqtroller: MockContract
+  let mockObserverStaking: MockContract
   let merkleProvider: ObserverMerkleProvider
   let merkleDistributor: EpochMerkleDistributor
   let token: Token
@@ -64,9 +66,13 @@ describe('EpochMerkleDistributor', function () {
     mockLiqtroller = await deployMockContract(observers[0], Liqtroller.abi)
     await mockLiqtroller.mock.epochSealThreshold.returns(3)
     await mockLiqtroller.mock.epochDuration.returns(15000)
+
+    mockObserverStaking = await deployMockContract(observers[0], ObserverStaking.abi)
+    await mockObserverStaking.mock.isObserverEligible.returns(true)
     merkleProvider = <ObserverMerkleProvider>(
       await ObserverMerkleProviderFactory.deploy(
         mockLiqtroller.address,
+        mockObserverStaking.address,
         ethers.provider.blockNumber
       )
     )

@@ -8,6 +8,9 @@ import { LiqtrollerErrors } from '../errors'
 describe('Controller', function () {
   const epochSealThreshold = 3
   const epochDuration = 15000
+  const stakeAmount = 500
+  const stakeDuration = 100
+  const stakeDurationTreshold = 20
 
   let signers: SignerWithAddress[]
   let admin: SignerWithAddress
@@ -20,7 +23,14 @@ describe('Controller', function () {
 
   this.beforeEach(async function () {
     const Liqtroller: Liqtroller__factory = await ethers.getContractFactory('Liqtroller')
-    liqtroller = await Liqtroller.deploy(admin.address, epochSealThreshold, epochDuration)
+    liqtroller = await Liqtroller.deploy(
+      admin.address,
+      epochSealThreshold,
+      epochDuration,
+      stakeAmount,
+      stakeDuration,
+      stakeDurationTreshold
+    )
   })
 
   it('deploy', async function () {

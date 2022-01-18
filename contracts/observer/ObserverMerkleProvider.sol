@@ -3,15 +3,10 @@ pragma solidity 0.8.10;
 
 import "./interfaces/IEpochMerkleProvider.sol";
 import "./interfaces/IEpochObserverHandler.sol";
+import "./interfaces/IObserverStaking.sol";
 import "../controller/Liqtroller.sol";
 
 contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
-    /// TODO: Should be unitroller. Such that upgrade is not required when the controller contract gets upgraded. See README
-    constructor(address _liqtroller, uint256 _epochEndBlock) {
-        liqtroller = Liqtroller(_liqtroller);
-        epochEndBlock = _epochEndBlock;
-    }
-
     /// @dev This is a simple implementation counting the merkle roots for an epoch.
     /// TODO: eventually this will need to considered stake
     mapping(uint256 => mapping(bytes32 => uint256)) public merkleRootCounts;
@@ -32,6 +27,19 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
     uint256 public epochEndBlock;
 
     Liqtroller public liqtroller;
+
+    IObserverStaking public observerStaking;
+
+    /// TODO: Should be unitroller. Such that upgrade is not required when the controller contract gets upgraded. See README
+    constructor(
+        address _liqtroller,
+        address _observerStaking,
+        uint256 _epochEndBlock
+    ) {
+        liqtroller = Liqtroller(_liqtroller);
+        observerStaking = IObserverStaking(_observerStaking);
+        epochEndBlock = _epochEndBlock;
+    }
 
     /// @dev Epochs must not be sealed and go forward.
     modifier onlyValidEpoch(uint256 epoch) {
@@ -57,14 +65,6 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
         return sealedMerkleRoots[epoch];
     }
 
-    function sealEpoch(uint256 epoch, bytes32 _merkleRoot) private {
-        require(block.number > epochEndBlock, "EPOCH_NOT_READY_FOR_SEALING");
-        sealedMerkleRoots[epoch] = _merkleRoot;
-        lastEpoch = epoch;
-        epochEndBlock = epochEndBlock + liqtroller.epochDuration();
-        emit SealEpoch(epoch, _merkleRoot);
-    }
-
     /// @inheritdoc IEpochObserverHandler
     function submitMerkleRoot(uint256 epoch, bytes32 _merkleRoot)
         external
@@ -72,9 +72,18 @@ contract ObserverMerkleProvider is IEpochMerkleProvider, IEpochObserverHandler {
         onlyValidEpoch(epoch)
         submitOnce(epoch, msg.sender)
     {
+        require(observerStaking.isObserverEligible(msg.sender), "OBSERVER_NOT_ELIGIBLE");
         merkleRootCounts[epoch][_merkleRoot]++;
         if (merkleRootCounts[epoch][_merkleRoot] >= liqtroller.epochSealThreshold()) {
             sealEpoch(epoch, _merkleRoot);
         }
+    }
+
+    function sealEpoch(uint256 epoch, bytes32 _merkleRoot) private {
+        require(block.number > epochEndBlock, "EPOCH_NOT_READY_FOR_SEALING");
+        sealedMerkleRoots[epoch] = _merkleRoot;
+        lastEpoch = epoch;
+        epochEndBlock = epochEndBlock + liqtroller.epochDuration();
+        emit SealEpoch(epoch, _merkleRoot);
     }
 }

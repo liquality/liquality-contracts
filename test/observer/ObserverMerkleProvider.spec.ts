@@ -1,6 +1,7 @@
 import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address'
 import Liqtroller from '../../artifacts/contracts/controller/Liqtroller.sol/Liqtroller.json'
+import ObserverStaking from '../../artifacts/contracts/observer/ObserverStaking.sol/ObserverStaking.json'
 
 import { ObserverMerkleProvider } from '../../typechain'
 import { expect } from 'chai'
@@ -16,6 +17,8 @@ describe('ObserverMerkleProvider', function () {
   const epochDuration = 15000
 
   let mockLiqtroller: MockContract
+  let mockObserverStaking: MockContract
+
   let merkleProvider: ObserverMerkleProvider
   let observers: SignerWithAddress[]
 
@@ -28,9 +31,14 @@ describe('ObserverMerkleProvider', function () {
     mockLiqtroller = await deployMockContract(observers[0], Liqtroller.abi)
     await mockLiqtroller.mock.epochSealThreshold.returns(epochSealThreshold)
     await mockLiqtroller.mock.epochDuration.returns(epochDuration)
+
+    mockObserverStaking = await deployMockContract(observers[0], ObserverStaking.abi)
+    await mockObserverStaking.mock.isObserverEligible.returns(true)
+
     merkleProvider = <ObserverMerkleProvider>(
       await ObserverMerkleProviderFactory.deploy(
         mockLiqtroller.address,
+        mockObserverStaking.address,
         ethers.provider.blockNumber
       )
     )

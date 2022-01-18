@@ -4,7 +4,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-wit
 import { ReferralRegistry } from '../../typechain'
 import { expect } from 'chai'
 
-describe.only('ReferralRegistry', function () {
+describe('ReferralRegistry', function () {
   let referralRegistry: ReferralRegistry
   let signers: SignerWithAddress[]
 
