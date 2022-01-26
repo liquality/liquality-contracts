@@ -8,7 +8,13 @@ import {
   SLiqualityToken
 } from '../../typechain'
 
-export async function deployGovernance(admin: string) {
+export async function deployGovernance(admin: string): Promise<{
+  liq: LiqualityToken
+  sLiq: SLiqualityToken
+  timelock: Timelock
+  delegate: GovernorBravoDelegate
+  delegator: GovernorBravoDelegator
+}> {
   const LiqualityToken = await ethers.getContractFactory('LiqualityToken')
   const liq: LiqualityToken = await LiqualityToken.deploy(admin)
   const LiqualityStaking = await ethers.getContractFactory('sLiqualityToken')
