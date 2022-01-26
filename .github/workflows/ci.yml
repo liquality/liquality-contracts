@@ -1,7 +1,7 @@
 name: "Continuous Integration"
 
 env:
-  COVERAGE_GIT_BRANCH: "main"
+  COVERAGE_GIT_BRANCH: "master"
   COVERAGE_SERVICE_NAME: "github-actions-ci"
   INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
   MNEMONIC: ${{ secrets.MNEMONIC }}
@@ -10,10 +10,10 @@ env:
 on:
   pull_request:
     branches:
-      - "main"
+      - "master"
   push:
     branches:
-      - "main"
+      - "master"
 
 jobs:
   ci:
