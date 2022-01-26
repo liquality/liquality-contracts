@@ -1,5 +1,7 @@
 # Liquality Conrtacts
 
+[![Continuous Integration](https://github.com/liquality/liquality-contracts/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/liquality/liquality-contracts/actions/workflows/ci.yml)
+
 ## Contracts
 
 - Token
