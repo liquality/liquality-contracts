@@ -7,7 +7,7 @@ if (!mnemonic) {
 }
 
 module.exports = {
-  istanbulReporter: ['html', 'lcov'],
+  istanbulReporter: ['html', 'lcov', 'text'],
   onCompileComplete: async function (_config) {
     await run('typechain')
   },
@@ -19,5 +19,5 @@ module.exports = {
   providerOptions: {
     mnemonic
   },
-  skipFiles: ['mocks', 'test']
+  skipFiles: ['mocks', 'test', 'governance']
 }
