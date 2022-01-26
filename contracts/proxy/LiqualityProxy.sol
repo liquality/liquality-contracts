@@ -23,6 +23,7 @@ contract LiqualityProxy is ILiqualityProxy {
 
         // Check that the target is a valid contract.
         uint256 codeSize;
+        // solhint-disable-next-line
         assembly {
             codeSize := extcodesize(target)
         }
@@ -38,6 +39,7 @@ contract LiqualityProxy is ILiqualityProxy {
 
         // Delegate call to the target contract.
         bytes memory response;
+        // solhint-disable-next-line
         (success, response) = target.delegatecall{gas: stipend}(data);
 
         // Check that the router has not been changed.
@@ -49,6 +51,7 @@ contract LiqualityProxy is ILiqualityProxy {
         if (!success) {
             // If there is return data, the call reverted with a reason or a custom error.
             if (response.length > 0) {
+                // solhint-disable-next-line
                 assembly {
                     let returndata_size := mload(response)
                     revert(add(32, response), returndata_size)
