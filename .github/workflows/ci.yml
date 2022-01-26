@@ -33,7 +33,7 @@ jobs:
           path: "./node_modules"
 
       - name: "Install dependencies"
-        run: "yarn install"
+        run: "yarn install --immutable-cache"
 
       - name: "Lint Solidity and TypeScript code"
         run: "yarn run lint"
