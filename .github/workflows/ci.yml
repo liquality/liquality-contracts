@@ -27,13 +27,9 @@ jobs:
         with:
           node-version: "12.x"
 
-      - uses: "actions/cache@v2"
-        with:
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
-          path: "./node_modules"
 
       - name: "Install dependencies"
-        run: "yarn install --immutable --immutable-cache"
+        run: "yarn install"
 
       - name: "Lint Solidity and TypeScript code"
         run: "yarn run lint"
