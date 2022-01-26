@@ -33,13 +33,13 @@ jobs:
           path: "./node_modules"
 
       - name: "Install dependencies"
-        run: "yarn install --frozen-lockfile"
+        run: "yarn install --immutable"
 
       - name: "Lint Solidity and TypeScript code"
         run: "yarn run lint"
 
       - name: "Compile the contracts and generate TypeChain artifacts"
-        run: "yarn run typechain && yarn run typechain"
+        run: "yarn run typechain"
 
       - name: "Test the contracts and run code coverage"
         run: "yarn run coverage"
