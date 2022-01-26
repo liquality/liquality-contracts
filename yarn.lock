@@ -1184,7 +1184,7 @@ __metadata:
     "@nomiclabs/hardhat-waffle": ^2.0.1
     "@openzeppelin/contracts": ^4.2.0
     "@typechain/ethers-v5": ^7.0.1
-    "@typechain/hardhat": ^4.0.0
+    "@typechain/hardhat": ^2.3.0
     "@types/chai": ^4.2.21
     "@types/fs-extra": ^9.0.12
     "@types/mocha": ^9.0.0
@@ -1482,16 +1482,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typechain/hardhat@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "@typechain/hardhat@npm:4.0.0"
+"@typechain/hardhat@npm:^2.3.0":
+  version: 2.3.1
+  resolution: "@typechain/hardhat@npm:2.3.1"
   dependencies:
     fs-extra: ^9.1.0
   peerDependencies:
     hardhat: ^2.0.10
     lodash: ^4.17.15
-    typechain: ^7.0.0
-  checksum: 7fc57e4b274d96a3c533c59306a086644b514af881bcac7e258a24cb5a563ecdff2a6b81ab6d8d790618a28de9243f3bf4c85894cbab05b1625bd3087c7972ac
+    typechain: ^5.1.2
+  checksum: f6090b80e3c75e47bb02c9b2c669258e976ccf06502c168b851ad7ca20f53cb554dcb8104bc7ca608f2111baa047ee8e52ce6153eb80450edb9736ba5ebfb12f
   languageName: node
   linkType: hard
 
