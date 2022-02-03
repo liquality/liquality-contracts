@@ -4,21 +4,51 @@
 
 ## Contracts
 
-- Token
-- Governance - Forked from https://github.com/compound-finance/compound-protocol/commit/a6251ecc30adb8dfa904e2231e9a9fdb4eea78be and upgrade to 0.8.0 solidity
-- Observers
+- [`contracts/token`](contracts/token/) - LIQ token contract forked from Aragon
+- [`contracts/governance`](contracts/governance/) - Governor Bravo forked from https://github.com/compound-finance/compound-protocol/commit/a6251ecc30adb8dfa904e2231e9a9fdb4eea78be
+- [`contracts/controller`](contracts/controller/) - Compound style controllers for setting goverance decided protocol parameters
+- [`contracts/proxy`](contracts/proxy/) - Proxy contract for routing wallet interactions
+- [`contracts/observer`](contracts/observer/) - Observers submitting merkle roots for rewards and staking contracts
+- [`contracts/referrals`](contracts/referrals/) - Referral registry of wallet user referrals
+
+## Liquality Protocol
+
+Users opt in to a small fee to the DAO treasury when using in wallet integrations, in exchange they receive LIQ token rewards. LIQ can be staked to receive sLIQ and vote on governance proposals.
+
+- Liquality wallet users using the wallet integrations (swaps, lending etc.) have their contract calls routed through the Liquality proxy contract, where a small fee is extracted.
+- The fee is added to the DAO treasury.
+- The "Liquality Indexer" tracks these interactions.
+- Every 2 weeks, "Observer" nodes read user activity and calculate LIQ rewards for users.
+- Observers submit their calculation to the chain.
+- Users can claim their LIQ rewards
+
+## User Scenario
+
+Swapping ETH to BTC as an example
+
+1. Liquality wallet retrieves a quote for swapping ETH → BTC
+2. Thorchain provides the best rate, the user continues
+3. The user's swap is routed through the `Liquality Proxy`, where several things happen:
+   - If the user has opted into the fee, a **0.3%** fee is deducted from the base currency and sent to the treasury and possibly the developer of the thorchain integration.
+   - If the user was referred and this is their first interaction, their referrer is registered with the `Liquality Referral Registry`
+   - The swap is conducted with Thorchain
+4. The `Liquality Indexer` detects the `Liquality Proxy` transaction and indexes its details.
+5. Observers collate the activity using the `Liquality Indexer` and calculate the rewards owed to the user. If the user was referred, the referrer is also rewarded.
+6. Observers generate the merkle tree for the rewards and submit them to the `ObserverMerkleProvider`
+7. Once the `epochSealThreshold` (as defined by governance) is reached. The epoch is final.
+8. Once the epoch is final, users are able to call `EpochMerkleDistributor` to claim their rewards. If left unclaimed will be rolled into the next epoch.
 
 ## Architecture
 
 ![image](https://user-images.githubusercontent.com/11529637/152171038-0e42019c-207d-4e1b-9f6e-dbf47f4f65cc.png)
 
-**Liquality Proxy:** Any user activity possible on any chain (initial EVM) goes through this contract. Its purpose is to detect user activity as well as handle refferal registration and fees.
+**Liquality Proxy:** Any user activity possible on any chain (initially EVM) goes through this contract. Its purpose is to detect user activity as well as handle refferal registration and fees.
 
 **Liquality Referral Registry:** Registers wallet referrals - can be queried to see who referred who for the purpose of allocating rewards
 
 **Wallet Integrations:** Integrations built into the wallet. This can be swaps or things like lending/borrowing.
 
-**User Staking Contract:** Users stake into this contract in variable times to be able to vote on governance. And perhaps receive other benefits. 
+**User Staking Contract:** Users stake into this contract in variable times to be able to vote on governance. And perhaps receive other benefits.
 
 **Indexer:** The single data source for user activity using the Liquality protocol or wallet. It indexes transactions made through the Liquality proxy and through the liquality swap protocol. It is a public web service.
 
@@ -30,26 +60,9 @@
 
 **Merkle Data Provider:** Observers submit the map (merkle tree) of rewards here.
 
-**Airdrop Merkle Distributor:** Relies on the "Merkle Data Provider" to allow users to claim airdrop distribution. 
+**Airdrop Merkle Distributor:** Relies on the "Merkle Data Provider" to allow users to claim airdrop distribution.
 
 **Epoch Merkle Distributor:** Relies on the "Merkle Data Provider" to allow users to claim activity rewards.
-
-### User Scenario
-
-Swapping ETH to BTC as an example
-
-1. Liquality wallet retrieves a quote for swapping ETH → BTC
-2. Thorchain provides the best rate, the user continues
-3. The user's swap is routed through the `Liquality Proxy`, where several things happen:
-    - If the user has opted into the fee, a **0.3%** fee is deducted from the base currency and sent to the treasury and possibly the developer of the thorchain integration.
-    - If the user was referred and this is their first interaction, their referrer is registered with the `Liquality Referral Registry`
-    - The swap is conducted with Thorchain
-4. The `Liquality Indexer` detects the `Liquality Proxy` transaction and indexes its details.
-5. Observers collate the activity using the `Liquality Indexer` and calculate the rewards owed to the user. If the user was referred, the referrer is also rewarded.
-6. Observers generate the merkle tree for the rewards and submit them to the `ObserverMerkleProvider`
-7. Once the `epochSealThreshold` (as defined by governance) is reached. The epoch is final.
-8. Once the epoch is final, users are able to call `EpochMerkleDistributor` to claim their rewards. If left unclaimed will be rolled into the next epoch.
-
 
 ## Governance deployment
 
@@ -65,7 +78,6 @@ How governance is deployed.
 - Add `LIQTROLLER_ADMIN`, `INITIAL_EPOCH_SEAL_THRESHOLD` and `LIQ_TOKEN_ADDRESS` inside the `.env` file
 - Run `yarn deploy --network <network_name>`
 - The order of deployment is: `Liqtroller` -> `ObserverMerkleProvider` -> `EpochMerkleDistributor`
-
 
 ## Pending
 
