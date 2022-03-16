@@ -62,6 +62,20 @@ contract Liqtroller is ILiqtroller, LiqtrollerStorageV1 {
     }
 
     /// @inheritdoc ILiqtroller
+    function setNftVotingPowerPercentage(uint256 newNftVotingPowerPercentage)
+        external
+        override
+        onlyAdmin
+    {
+        require(
+            newNftVotingPowerPercentage <= 5000,
+            "Liqtroller: NFT Voting power cannot exceed 50%"
+        );
+        emit NewNftVotingPowerPercentage(nftVotingPowerPercentage, newNftVotingPowerPercentage);
+        nftVotingPowerPercentage = newNftVotingPowerPercentage;
+    }
+
+    /// @inheritdoc ILiqtroller
     function getStakeParameters()
         external
         view

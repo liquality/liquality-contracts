@@ -27,4 +27,8 @@ contract LiqtrollerStorageV1 is LiqtrollerStorage {
     /// @notice the observers should not be allowed to submit merkle root if their stake is expiring,
     /// so the governance will have the time specified by the stakeDurationTreshold to slash the observer if they act maliciously
     uint256 public stakeDurationTreshold;
+
+    /// @notice the total amount of voting power in percentages assigned to NFT holders
+    /// 10000 = 100%
+    uint256 public nftVotingPowerPercentage;
 }
