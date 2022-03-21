@@ -62,6 +62,20 @@ contract Liqtroller is ILiqtroller, LiqtrollerStorageV1 {
     }
 
     /// @inheritdoc ILiqtroller
+    function setVotingPowerPercentage(uint256 newVotingPowerPercentage)
+        external
+        override
+        onlyAdmin
+    {
+        require(
+            newVotingPowerPercentage <= 4000 && newVotingPowerPercentage >= 2000,
+            "Liqtroller: Voting power cannot exceed 50%"
+        );
+        emit NewVotingPowerPercentage(votingPowerPercentage, newVotingPowerPercentage);
+        votingPowerPercentage = newVotingPowerPercentage;
+    }
+
+    /// @inheritdoc ILiqtroller
     function getStakeParameters()
         external
         view

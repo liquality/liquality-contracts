@@ -16,6 +16,11 @@ interface ILiqtroller {
         uint256 oldStakeDurationThreshold,
         uint256 newStakeDurationThreshold
     );
+    /// Emitted when the voting power percentage changes
+    event NewVotingPowerPercentage(
+        uint256 oldVotingPowerPercentage,
+        uint256 newVotingPowerPercentage
+    );
 
     /// Set the epoch seal threshold
     function setEpochSealThreshold(uint256 newEpochSealThreshold) external;
@@ -31,6 +36,9 @@ interface ILiqtroller {
 
     /// Set the new stake duration threshold
     function setStakeDurationThreshold(uint256 newStakeDurationThreshold) external;
+
+    /// Set new value for the voting power percentage
+    function setVotingPowerPercentage(uint256 newVotingPowerPercentage) external;
 
     function getStakeParameters()
         external

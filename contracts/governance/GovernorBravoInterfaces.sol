@@ -82,7 +82,10 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     TimelockInterface public timelock;
 
     /// @notice The address of the Liquality staking contract
-    SliqInterface public sLiq;
+    sLIQInterface public sLiq;
+
+    /// @notice The address of the Liquality Extra Voting Power contract
+    sLIQInterface public extraVotingPower;
 
     /// @notice The official record of all proposals ever proposed
     mapping (uint => Proposal) public proposals;
@@ -173,6 +176,6 @@ interface TimelockInterface {
     function executeTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external payable returns (bytes memory);
 }
 
-interface SliqInterface {
+interface sLIQInterface {
     function getPriorVotes(address account, uint blockNumber) external view returns (uint256);
 }
