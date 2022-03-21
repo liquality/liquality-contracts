@@ -16,10 +16,10 @@ interface ILiqtroller {
         uint256 oldStakeDurationThreshold,
         uint256 newStakeDurationThreshold
     );
-    /// Emitted when the nft voting power percentage changes
-    event NewNftVotingPowerPercentage(
-        uint256 oldNftVotingPowerPercentage,
-        uint256 newNftVotingPowerPercentage
+    /// Emitted when the voting power percentage changes
+    event NewVotingPowerPercentage(
+        uint256 oldVotingPowerPercentage,
+        uint256 newVotingPowerPercentage
     );
 
     /// Set the epoch seal threshold
@@ -37,8 +37,8 @@ interface ILiqtroller {
     /// Set the new stake duration threshold
     function setStakeDurationThreshold(uint256 newStakeDurationThreshold) external;
 
-    /// Set new value for the nft voting power percentage
-    function setNftVotingPowerPercentage(uint256 newNftVotingPowerPercentage) external;
+    /// Set new value for the voting power percentage
+    function setVotingPowerPercentage(uint256 newVotingPowerPercentage) external;
 
     function getStakeParameters()
         external

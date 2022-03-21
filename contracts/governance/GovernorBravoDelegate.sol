@@ -48,7 +48,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @param votingDelay_ The initial voting delay
       * @param proposalThreshold_ The initial proposal threshold
       */
-    function initialize(address timelock_, address sLiq_, address nftVotingPower_, uint votingPeriod_, uint votingDelay_, uint proposalThreshold_) public {
+    function initialize(address timelock_, address sLiq_, address extraVotingPower_, uint votingPeriod_, uint votingDelay_, uint proposalThreshold_) public {
         require(address(timelock) == address(0), "GovernorBravo::initialize: can only initialize once");
         require(msg.sender == admin, "GovernorBravo::initialize: admin only");
         require(timelock_ != address(0), "GovernorBravo::initialize: invalid timelock address");
@@ -59,7 +59,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
 
         timelock = TimelockInterface(timelock_);
         sLiq = sLIQInterface(sLiq_);
-        nftVotingPower = sLIQInterface(nftVotingPower_);
+        extraVotingPower = sLIQInterface(extraVotingPower_);
         votingPeriod = votingPeriod_;
         votingDelay = votingDelay_;
         proposalThreshold = proposalThreshold_;
@@ -261,7 +261,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "GovernorBravo::castVoteInternal: voter already voted");
-        uint96 votes = uint96(sLiq.getPriorVotes(voter, proposal.startBlock) + nftVotingPower.getPriorVotes(voter, proposal.startBlock));
+        uint96 votes = uint96(sLiq.getPriorVotes(voter, proposal.startBlock) + extraVotingPower.getPriorVotes(voter, proposal.startBlock));
 
         if (support == 0) {
             proposal.againstVotes = add256(proposal.againstVotes, votes);

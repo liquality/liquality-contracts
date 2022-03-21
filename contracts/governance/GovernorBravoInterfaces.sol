@@ -84,8 +84,8 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     /// @notice The address of the Liquality staking contract
     sLIQInterface public sLiq;
 
-    /// @notice The address of the Liquality NFT Voting Power contract
-    sLIQInterface public nftVotingPower;
+    /// @notice The address of the Liquality Extra Voting Power contract
+    sLIQInterface public extraVotingPower;
 
     /// @notice The official record of all proposals ever proposed
     mapping (uint => Proposal) public proposals;

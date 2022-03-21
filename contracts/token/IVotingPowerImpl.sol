@@ -1,7 +1,7 @@
 // SPDX-License-Identifier:MIT
 pragma solidity >=0.8.10;
 
-interface INftVotingPowerImpl {
+interface IVotingPowerImpl {
     function balanceOf(address) external view returns (uint256);
 
     function getPriorVotes(address account, uint256 blockNumber) external view returns (uint256);
