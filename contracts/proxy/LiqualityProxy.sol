@@ -5,60 +5,73 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/ILiqualityProxy.sol";
 
 contract LiqualityProxy is ILiqualityProxy {
-    using SafeERC20 for IERC20;
+    address payable private feeCollector;
+    uint256 private feeRate;
 
-    uint256 public constant gasReserve = 5_000;
-
-    address public liqualityRouter;
-
-    constructor(address _liqualityRouter) {
-        liqualityRouter = _liqualityRouter;
+    constructor() {
+        feeRate = 1000;
+        feeCollector = payable(0x0EDd8AF763D0a7999f15623859dA9a0A786D1A9B);
     }
 
-    function execute(address target, bytes calldata data) external payable returns (bool success) {
-        // Check that the caller is the liquality router
-        if (liqualityRouter != msg.sender) {
-            revert LiqProxy__ExecutionNotAuthorized(liqualityRouter, msg.sender, target);
+    ///@notice targetFunctionToAdapterFunction maps each function in each swapper to the
+    /// adapter function that handles it.
+    mapping(address => mapping(bytes4 => bytes4)) public targetFunctionToAdapterFunction;
+
+    ///@notice targetToAdapter maps each swapper to it's adapter
+    mapping(address => address) public targetToAdapter;
+
+    function swap(address target, bytes calldata data) external payable {
+        // Check that the caller is an EOA
+        if (msg.sender != tx.origin) {
+            revert LiqProxy__ExecutionNotAuthorized(msg.sender, target);
         }
 
-        // Check that the target is a valid contract.
-        uint256 codeSize;
-        // solhint-disable-next-line
-        assembly {
-            codeSize := extcodesize(target)
-        }
-        if (codeSize == 0) {
-            revert LiqProxy__TargetInvalid(target);
+        // Determine adapter to use
+        address adapter = targetToAdapter[target];
+        if (target == address(0)) {
+            revert LiqProxy__SwapperNotSupported(target);
         }
 
-        // Save the router address in memory. This local variable cannot be modified during the DELEGATECALL.
-        address liqualityRouter_ = liqualityRouter;
-
-        // Reserve some gas to ensure that the function has enough to finish the execution.
-        uint256 stipend = gasleft() - gasReserve;
-
-        // Delegate call to the target contract.
-        bytes memory response;
-        // solhint-disable-next-line
-        (success, response) = target.delegatecall{gas: stipend}(data);
-
-        // Check that the router has not been changed.
-        if (liqualityRouter_ != liqualityRouter) {
-            revert LiqProxy__RouterChanged(liqualityRouter_, liqualityRouter);
+        // Determine adapter function to use
+        bytes4 targetFunction = bytes4(data);
+        bytes4 adapterFunction = targetFunctionToAdapterFunction[target][targetFunction];
+        if (adapterFunction == bytes4(0)) {
+            revert LiqProxy__SwapperFunctionNotSupported(target, targetFunction);
         }
+
+        // Delegate call to the adapter contract.
+        (bool success, bytes memory __) = adapter.delegatecall(
+            abi.encodeWithSelector(adapterFunction, target, feeRate, feeCollector, data)
+        );
 
         // Check if the call was successful or not.
         if (!success) {
-            // If there is return data, the call reverted with a reason or a custom error.
-            if (response.length > 0) {
-                // solhint-disable-next-line
-                assembly {
-                    let returndata_size := mload(response)
-                    revert(add(32, response), returndata_size)
-                }
-            } else {
-                revert LiqProxy__ExecutionReverted();
-            }
+            revert LiqProxy__ExecutionReverted();
         }
+
+        emit ProxySwap(target, data);
     }
+
+    function addAdapter(address target, address adapter) external {
+        targetToAdapter[target] = adapter;
+    }
+
+    function mapSwapperFunctionToAdapterFunction(
+        address target,
+        bytes4 swapperFunction,
+        bytes4 adapterFunction
+    ) external {
+        targetFunctionToAdapterFunction[target][swapperFunction] = adapterFunction;
+    }
+
+    function setFeeCollector(address payable _feeCollector) external {
+        feeCollector = _feeCollector;
+    }
+
+    function setFeeRate(uint256 _feeRate) external {
+        feeRate = _feeRate;
+    }
+
+    // @notice Needed in case there a swapper refunds value
+    receive() external payable {}
 }
