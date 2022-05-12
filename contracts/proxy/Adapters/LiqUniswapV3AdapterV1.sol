@@ -17,8 +17,6 @@ contract LiqUniswapV3AdapterV1 is ILiqUniswapV3AdapterV1 {
         address feeCollector,
         bytes calldata data
     ) external payable {
-        bool isSwapFromValue = Adapter.isSwapFromValue();
-
         ExactInputSingleParams memory params;
 
         // Decode data to get fromToken and fromAmount
@@ -26,10 +24,11 @@ contract LiqUniswapV3AdapterV1 is ILiqUniswapV3AdapterV1 {
 
         // Determine the swap type(fromToken or fromValue) and initiate swap.
         bytes memory response;
-        if (isSwapFromValue) {
+        if (Adapter.isSwapFromValue()) {
             // If it's a swap from value
             response = Adapter.beginFromValueSwap(target, data);
         } else {
+            // @TODO research how to check that its a swap to value swap
             // If it's a swap from Token
             response = Adapter.beginFromTokenSwap(target, params.tokenIn, params.amountIn, data);
         }
@@ -37,10 +36,8 @@ contract LiqUniswapV3AdapterV1 is ILiqUniswapV3AdapterV1 {
 
         // handle returnedAmount
         if (data.length > TO_TOKEN_DATA_LENGTH) {
-            // If it's a swap to value
-            // Unwrap returned weth first
+            // If it's a swap to value  Unwrap returned weth first
             Adapter.unwrapWeth(returnedAmount);
-
             Adapter.handleReturnedValue(returnedAmount, feeRate, payable(feeCollector));
         } else {
             // If it's a swap to token
