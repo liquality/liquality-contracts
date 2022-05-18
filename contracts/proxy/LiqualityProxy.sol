@@ -3,15 +3,14 @@ pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/ILiqualityProxy.sol";
+import "./LibTransfer.sol";
 
 contract LiqualityProxy is ILiqualityProxy {
+    using SafeERC20 for IERC20;
+    using LibTransfer for address payable;
     address payable private feeCollector;
+    address private admin;
     uint256 private feeRate;
-
-    constructor() {
-        feeRate = 1000;
-        feeCollector = payable(0x0EDd8AF763D0a7999f15623859dA9a0A786D1A9B);
-    }
 
     ///@notice targetFunctionToAdapterFunction maps each function in each swapper to the
     /// adapter function that handles it.
@@ -20,39 +19,51 @@ contract LiqualityProxy is ILiqualityProxy {
     ///@notice targetToAdapter maps each swapper to it's adapter
     mapping(address => address) public targetToAdapter;
 
-    function swap(address target, bytes calldata data) external payable {
-        // Check that the caller is an EOA
-        if (msg.sender != tx.origin) {
-            revert LiqProxy__ExecutionNotAuthorized(msg.sender, target);
-        }
+    constructor(address _admin) {
+        admin = _admin;
+    }
 
+    function swap(
+        address target,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 amountOut,
+        bytes calldata data
+    ) external payable {
         // Determine adapter to use
         address adapter = targetToAdapter[target];
-        if (target == address(0)) {
-            revert LiqProxy__SwapperNotSupported(target);
-        }
 
         // Determine adapter function to use
         bytes4 targetFunction = bytes4(data);
         bytes4 adapterFunction = targetFunctionToAdapterFunction[target][targetFunction];
-        if (adapterFunction == bytes4(0)) {
-            revert LiqProxy__SwapperFunctionNotSupported(target, targetFunction);
-        }
 
         // Delegate call to the adapter contract.
-        (bool success, bytes memory __) = adapter.delegatecall(
-            abi.encodeWithSelector(adapterFunction, target, feeRate, feeCollector, data)
+        // solhint-disable-next-line
+        (bool success, bytes memory response) = adapter.delegatecall(
+            abi.encodeWithSelector(
+                adapterFunction,
+                target,
+                tokenIn,
+                tokenOut,
+                amountIn,
+                amountOut,
+                feeRate,
+                feeCollector,
+                data
+            )
         );
 
         // Check if the call was successful or not.
         if (!success) {
-            revert LiqProxy__ExecutionReverted();
+            revert(string(response));
         }
-
-        emit ProxySwap(target, data);
     }
 
-    function addAdapter(address target, address adapter) external {
+    function addAdapter(address target, address adapter) external onlyAdmin {
+        if (target == address(0)) {
+            revert LiqProxy__SwapperNotSupported(target);
+        }
         targetToAdapter[target] = adapter;
     }
 
@@ -60,18 +71,37 @@ contract LiqualityProxy is ILiqualityProxy {
         address target,
         bytes4 swapperFunction,
         bytes4 adapterFunction
-    ) external {
+    ) external onlyAdmin {
+        if (adapterFunction == bytes4(0) || bytes4(swapperFunction) == bytes4(0)) {
+            revert LiqProxy__SwapperFunctionNotSupported(target, swapperFunction);
+        }
         targetFunctionToAdapterFunction[target][swapperFunction] = adapterFunction;
     }
 
-    function setFeeCollector(address payable _feeCollector) external {
+    function setFeeCollector(address payable _feeCollector) external onlyAdmin {
         feeCollector = _feeCollector;
     }
 
-    function setFeeRate(uint256 _feeRate) external {
+    function setFeeRate(uint256 _feeRate) external onlyAdmin {
         feeRate = _feeRate;
     }
 
-    // @notice Needed in case there a swapper refunds value
+    /// @notice Needed in case a swapper refunds value
+    // solhint-disable-next-line
     receive() external payable {}
+
+    /// @notice Transfer any stuck value from contract to fee collector
+    function withdrawStuckValue() external onlyAdmin {
+        feeCollector.transferEth(address(this).balance);
+    }
+
+    /// @notice Transfer any stuck token from contract to fee collector
+    function withdrawStuckToken(IERC20 token) external onlyAdmin {
+        token.safeTransfer(feeCollector, token.balanceOf(address(this)));
+    }
+
+    modifier onlyAdmin() {
+        if (msg.sender != admin) revert LiqProxy__ExecutionNotAuthorized();
+        _;
+    }
 }

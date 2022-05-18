@@ -5,8 +5,7 @@ interface ILiqualityProxy {
     /// @dev Emitted when execution reverted with no reason.
     error LiqProxy__ExecutionReverted();
 
-    /// @dev Emitted when the caller is not an EOA.
-    error LiqProxy__ExecutionNotAuthorized(address caller, address target);
+    error LiqProxy__ExecutionNotAuthorized();
 
     /// @dev Emitted when the target swapper is not supported.
     error LiqProxy__SwapperNotSupported(address target);
@@ -14,16 +13,15 @@ interface ILiqualityProxy {
     /// @dev Emitted when unsupported function of swapper is encountered.
     error LiqProxy__SwapperFunctionNotSupported(address target, bytes4 targetFunction);
 
-    /// @dev Emitted when a successful swap operation goes throuth the proxy.
-    event ProxySwap(address indexed target, bytes data);
-
-    function swap(address target, bytes calldata data) external payable;
-
-    // ///  @notice Use the targetToAdapter mapping to know which adapter to use
-    // function chooseAdapter(address target) external returns (address);
-
-    // ///  @notice Use the targetFunctionToAdapterFunction mapping to know which adapter function to call
-    // function chooseAdapterFunction(address target, bytes calldata data) external returns (bytes4);
+    /// @notice this function is callable by anyone
+    function swap(
+        address target,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 amountOut,
+        bytes calldata data
+    ) external payable;
 
     ///  @notice Add/update adapter for a target swapper
     function addAdapter(address target, address adapter) external;
