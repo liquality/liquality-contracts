@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.10;
+pragma solidity >=0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../LibTransfer.sol";
 
 /// @notice contains functions common to all adapters.
 // @TODO consider(Yes or No) changing to an external library so it doesn't count
 // in the code size of adapters that use it.
 library Adapter {
     using SafeERC20 for IERC20;
-    address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    bytes4 constant WETH_WITHDRAW_FNC = 0x2e1a7d4d;
+    using LibTransfer for address payable;
 
     function beginFromTokenSwap(
         address target,
         address fromToken,
         uint256 fromAmount,
-        bytes calldata data
+        bytes memory data
     ) internal returns (bytes memory) {
         // Transfer users token to proxy
         IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
@@ -23,25 +23,21 @@ library Adapter {
         // Approve target as spender
         IERC20(fromToken).safeApprove(target, fromAmount);
         // Call target
+        // solhint-disable-next-line
         (bool success, bytes memory response) = target.call(data);
         if (!success) {
-            revert("");
+            revert(string(response));
         }
 
         return response;
     }
 
-    function beginFromValueSwap(address target, bytes calldata data)
-        internal
-        returns (bytes memory)
-    {
+    function beginFromValueSwap(address target, bytes memory data) internal returns (bytes memory) {
         // Call target with value
+        // solhint-disable-next-line
         (bool success, bytes memory response) = target.call{value: msg.value}(data);
         if (!success) {
-            console.log("Call to Target swapper unsuccessful >>>  ");
-            console.logBytes(response);
-
-            revert("");
+            revert(string(response));
         }
 
         return response;
@@ -77,10 +73,7 @@ library Adapter {
     }
 
     function sendValue(address payable recipient, uint256 amount) internal {
-        (bool success, bytes memory __) = recipient.call{value: amount}("");
-        if (!success) {
-            revert("");
-        }
+        recipient.transferEth((amount));
     }
 
     function sendToken(
@@ -99,12 +92,7 @@ library Adapter {
         return msg.value > 0;
     }
 
-    function unwrapWeth(uint256 amount) internal {
-        (bool success, bytes memory response) = WETH.call(
-            abi.encodeWithSelector(WETH_WITHDRAW_FNC, amount)
-        );
-        if (!success) {
-            revert("");
-        }
+    function isSwapToValue(address tokenOut) internal pure returns (bool) {
+        return tokenOut == address(0);
     }
 }
