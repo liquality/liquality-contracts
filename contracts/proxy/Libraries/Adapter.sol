@@ -88,8 +88,11 @@ library Adapter {
         return amount / feeRate;
     }
 
-    function isSwapFromValue() internal returns (bool) {
-        return msg.value > 0;
+    function isSwapFromValue(address tokenIn) internal returns (bool) {
+        if (msg.value > 0 && tokenIn != address(0)) {
+            revert("Ether should not be sent in fromToken swap");
+        }
+        return msg.value > 0 && tokenIn == address(0);
     }
 
     function isSwapToValue(address tokenOut) internal pure returns (bool) {

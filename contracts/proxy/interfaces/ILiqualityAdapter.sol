@@ -3,7 +3,7 @@ pragma solidity >=0.8.10;
 
 interface ILiqualityAdapter {
     /// @dev Swaps exact input for atleast X output
-    function exactInput(
+    function exactInputSwap(
         address target,
         address tokenIn,
         address tokenOut,
@@ -15,7 +15,8 @@ interface ILiqualityAdapter {
     ) external payable;
 
     /// @dev Swaps atmost X input for exact output
-    function exactOutput(
+    ///  This usecase is different from exactInputSwap in that, here, unspent amountIn is returned to the user
+    function exactOutputSwap(
         address target,
         address tokenIn,
         address tokenOut,

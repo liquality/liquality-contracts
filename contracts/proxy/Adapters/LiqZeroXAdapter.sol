@@ -7,7 +7,8 @@ import {ILiqualityAdapter} from "../interfaces/ILiqualityAdapter.sol";
 import "../interfaces/ILiqualityProxyEvent.sol";
 
 contract LiqZeroXAdapter is ILiqualityAdapter, ILiqualityProxyEvent {
-    function exactInput(
+    /// @notice This works for ZeroX sellToUniswap.
+    function exactInputSwap(
         address target,
         address tokenIn,
         address tokenOut,
@@ -19,7 +20,7 @@ contract LiqZeroXAdapter is ILiqualityAdapter, ILiqualityProxyEvent {
     ) external payable {
         // Determine the swap type(fromToken or fromValue) and initiate swap.
         bytes memory response;
-        if (Adapter.isSwapFromValue()) {
+        if (Adapter.isSwapFromValue(tokenIn)) {
             // If it's a swap from value
             response = Adapter.beginFromValueSwap(target, data);
         } else {
@@ -47,7 +48,9 @@ contract LiqZeroXAdapter is ILiqualityAdapter, ILiqualityProxyEvent {
         );
     }
 
-    function exactOutput(
+    /// @notice No usecase currently in ZeroX for this function but
+    /// it's here because it's part of the LiqualityAdapter Interface
+    function exactOutputSwap(
         address, //target
         address, //tokenIn
         address, //tokenOut
