@@ -4,9 +4,8 @@ pragma solidity >=0.8.10;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Adapter} from "../Libraries/Adapter.sol";
 import {ILiqualityAdapter} from "../interfaces/ILiqualityAdapter.sol";
-import "../interfaces/ILiqualityProxyEvent.sol";
 
-contract LiqZeroXAdapter is ILiqualityAdapter, ILiqualityProxyEvent {
+contract LiqZeroXAdapter is ILiqualityAdapter {
     /// @notice This works for ZeroX sellToUniswap.
     function exactInputSwap(
         address target,
