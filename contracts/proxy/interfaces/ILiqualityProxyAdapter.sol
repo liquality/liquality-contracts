@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.10;
 
-import "./ILiqualityProxySwapParams.sol";
+import "./IProxyCommons.sol";
 
-interface ILiqualityProxyAdapter is ILiqualityProxySwapParams {
+interface ILiqualityProxyAdapter is IProxyCommons {
     /// @dev Emitted when a successful swap operation goes throuth the proxy.
     event LiqualityProxySwap(
         address indexed target,
@@ -15,16 +15,7 @@ interface ILiqualityProxyAdapter is ILiqualityProxySwapParams {
         uint256 amountOut
     );
 
-    /// @dev Swaps exact input for atleast X output
-    function exactInputSwap(
-        uint256 feeRate,
-        address feeCollector,
-        LiqualityProxySwapParams calldata swapParams
-    ) external payable;
-
-    /// @dev Swaps atmost X input for exact output
-    ///  This usecase is different from exactInputSwap in that, here, unspent amountIn is returned to the user
-    function exactOutputSwap(
+    function swap(
         uint256 feeRate,
         address feeCollector,
         LiqualityProxySwapParams calldata swapParams

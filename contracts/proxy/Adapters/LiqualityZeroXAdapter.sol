@@ -7,7 +7,7 @@ import "../interfaces/ILiqualityProxyAdapter.sol";
 
 contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
     /// @notice This works for ZeroX sellToUniswap.
-    function exactInputSwap(
+    function swap(
         uint256 feeRate,
         address feeCollector,
         LiqualityProxySwapParams calldata swapParams
@@ -45,16 +45,6 @@ contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
             swapParams.amountIn,
             returnedAmount
         );
-    }
-
-    /// @notice No usecase currently in ZeroX for this function but
-    /// it's here because it's part of the LiqualityAdapter Interface
-    function exactOutputSwap(
-        uint256, //feeRate,
-        address, // feeCollector,
-        LiqualityProxySwapParams calldata //swapParams
-    ) external payable {
-        revert("");
     }
 
     /// @notice refund unspent value
