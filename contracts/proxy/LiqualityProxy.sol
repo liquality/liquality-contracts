@@ -23,35 +23,18 @@ contract LiqualityProxy is ILiqualityProxy {
         admin = _admin;
     }
 
-    function swap(
-        address target,
-        address tokenIn,
-        address tokenOut,
-        uint256 amountIn,
-        uint256 amountOut,
-        bytes calldata data
-    ) external payable {
+    function swap(LiqualityProxySwapParams calldata swapParams) external payable {
         // Determine adapter to use
-        address adapter = targetToAdapter[target];
+        address adapter = targetToAdapter[swapParams.target];
 
         // Determine adapter function to use
-        bytes4 targetFunction = bytes4(data);
-        bytes4 adapterFunction = targetFunctionToAdapterFunction[target][targetFunction];
+        bytes4 targetFunction = bytes4(swapParams.data);
+        bytes4 adapterFunction = targetFunctionToAdapterFunction[swapParams.target][targetFunction];
 
         // Delegate call to the adapter contract.
         // solhint-disable-next-line
         (bool success, bytes memory response) = adapter.delegatecall(
-            abi.encodeWithSelector(
-                adapterFunction,
-                target,
-                tokenIn,
-                tokenOut,
-                amountIn,
-                amountOut,
-                feeRate,
-                feeCollector,
-                data
-            )
+            abi.encodeWithSelector(adapterFunction, feeRate, feeCollector, swapParams)
         );
 
         // Check if the call was successful or not.

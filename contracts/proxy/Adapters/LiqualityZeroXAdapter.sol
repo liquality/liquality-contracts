@@ -2,47 +2,47 @@
 pragma solidity >=0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Adapter} from "../Libraries/Adapter.sol";
-import {ILiqualityAdapter} from "../interfaces/ILiqualityAdapter.sol";
+import "../Libraries/Adapter.sol";
+import "../interfaces/ILiqualityProxyAdapter.sol";
 
-contract LiqZeroXAdapter is ILiqualityAdapter {
+contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
     /// @notice This works for ZeroX sellToUniswap.
     function exactInputSwap(
-        address target,
-        address tokenIn,
-        address tokenOut,
-        uint256 amountIn,
-        uint256, //amountOut,
         uint256 feeRate,
         address feeCollector,
-        bytes calldata data
+        LiqualityProxySwapParams calldata swapParams
     ) external payable {
         // Determine the swap type(fromToken or fromValue) and initiate swap.
         bytes memory response;
-        if (Adapter.isSwapFromValue(tokenIn)) {
+        if (Adapter.isSwapFromValue(swapParams.tokenIn)) {
             // If it's a swap from value
-            response = Adapter.beginFromValueSwap(target, data);
+            response = Adapter.beginFromValueSwap(swapParams.target, swapParams.data);
         } else {
             // If it's a swap from Token
-            response = Adapter.beginFromTokenSwap(target, tokenIn, amountIn, data);
+            response = Adapter.beginFromTokenSwap(
+                swapParams.target,
+                swapParams.tokenIn,
+                swapParams.amountIn,
+                swapParams.data
+            );
         }
         uint256 returnedAmount = abi.decode(response, (uint256));
 
         // handle returnedAmount
-        if (Adapter.isSwapToValue(tokenOut)) {
+        if (Adapter.isSwapToValue(swapParams.tokenOut)) {
             Adapter.handleReturnedValue(returnedAmount, feeRate, payable(feeCollector));
         } else {
             // If it's a swap to token
-            Adapter.handleReturnedToken(tokenOut, returnedAmount, feeRate, feeCollector);
+            Adapter.handleReturnedToken(swapParams.tokenOut, returnedAmount, feeRate, feeCollector);
         }
 
         emit LiqualityProxySwap(
-            target,
+            swapParams.target,
             msg.sender,
             feeRate,
-            tokenIn,
-            tokenOut,
-            amountIn,
+            swapParams.tokenIn,
+            swapParams.tokenOut,
+            swapParams.amountIn,
             returnedAmount
         );
     }
@@ -50,14 +50,9 @@ contract LiqZeroXAdapter is ILiqualityAdapter {
     /// @notice No usecase currently in ZeroX for this function but
     /// it's here because it's part of the LiqualityAdapter Interface
     function exactOutputSwap(
-        address, //target
-        address, //tokenIn
-        address, //tokenOut
-        uint256, //amountIn
-        uint256, //amountOut
-        uint256, //feeRate
-        address, //feeCollector
-        bytes calldata //data
+        uint256, //feeRate,
+        address, // feeCollector,
+        LiqualityProxySwapParams calldata //swapParams
     ) external payable {
         revert("");
     }

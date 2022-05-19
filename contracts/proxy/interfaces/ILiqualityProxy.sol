@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.10;
 
-interface ILiqualityProxy {
+import "./ILiqualityProxySwapParams.sol";
+
+interface ILiqualityProxy is ILiqualityProxySwapParams {
     /// @dev Emitted when execution reverted with no reason.
     error LiqProxy__ExecutionReverted();
 
@@ -14,14 +16,7 @@ interface ILiqualityProxy {
     error LiqProxy__SwapperFunctionNotSupported(address target, bytes4 targetFunction);
 
     /// @notice this function is callable by anyone
-    function swap(
-        address target,
-        address tokenIn,
-        address tokenOut,
-        uint256 amountIn,
-        uint256 amountOut,
-        bytes calldata data
-    ) external payable;
+    function swap(LiqualityProxySwapParams calldata swapParams) external payable;
 
     ///  @notice Add/update adapter for a target swapper
     function addAdapter(address target, address adapter) external;
