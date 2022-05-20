@@ -21,8 +21,20 @@ contract LiqualityProxy is ILiqualityProxy {
     }
 
     function swap(LiqualityProxySwapParams calldata swapParams) external payable {
+        // Revert if value is sent fromToken swap or if value is not sent with fromValue swap
+        if (
+            (msg.value > 0 && swapParams.tokenIn != address(0)) ||
+            (msg.value == 0 && swapParams.tokenIn == address(0))
+        ) {
+            revert LiqProxy__InvalidSwap();
+        }
+
         // Determine adapter to use
         address adapter = targetToAdapter[swapParams.target];
+
+        if (adapter == address(0)) {
+            revert LiqProxy__SwapperNotSupported(swapParams.target);
+        }
 
         // Delegate call to the adapter contract.
         // solhint-disable-next-line
@@ -41,11 +53,22 @@ contract LiqualityProxy is ILiqualityProxy {
         }
     }
 
+    function changeAdmin(address newAdmin) external onlyAdmin {
+        if (newAdmin == address(0)) {
+            revert LiqProxy__InvalidAdmin();
+        }
+        admin = newAdmin;
+    }
+
     function addAdapter(address target, address adapter) external onlyAdmin {
         if (target == address(0)) {
             revert LiqProxy__SwapperNotSupported(target);
         }
         targetToAdapter[target] = adapter;
+    }
+
+    function removeAdapter(address target) external onlyAdmin {
+        targetToAdapter[target] = address(0);
     }
 
     function setFeeCollector(address payable _feeCollector) external onlyAdmin {

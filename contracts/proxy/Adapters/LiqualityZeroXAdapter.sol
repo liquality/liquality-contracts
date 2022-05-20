@@ -14,7 +14,7 @@ contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
     ) external payable {
         // Determine the swap type(fromToken or fromValue) and initiate swap.
         bytes memory response;
-        if (Adapter.isSwapFromValue(swapParams.tokenIn)) {
+        if (Adapter.isSwapFromValue()) {
             // If it's a swap from value
             response = Adapter.beginFromValueSwap(swapParams.target, swapParams.data);
         } else {
@@ -45,15 +45,5 @@ contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
             swapParams.amountIn,
             returnedAmount
         );
-    }
-
-    /// @notice refund unspent value
-    function refundValue(uint256 amount) internal {
-        // send unspent value out of proxy to user
-        Adapter.sendValue(payable(msg.sender), amount);
-    }
-
-    function refundToken(uint256 amount, address token) internal {
-        Adapter.sendToken(IERC20(token), msg.sender, amount);
     }
 }

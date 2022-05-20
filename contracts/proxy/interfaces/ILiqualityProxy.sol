@@ -15,11 +15,21 @@ interface ILiqualityProxy is IProxyCommons {
     /// @dev Emitted when unsupported function of swapper is encountered.
     error LiqProxy__SwapperFunctionNotSupported(address target, bytes4 targetFunction);
 
+    error LiqProxy__InvalidAdmin();
+
+    error LiqProxy__InvalidSwap();
+
     /// @notice this function is callable by anyone
     function swap(LiqualityProxySwapParams calldata swapParams) external payable;
 
+    ///  @notice this function changes the admin
+    function changeAdmin(address newAdmin) external;
+
     ///  @notice Add/update adapter for a target swapper
     function addAdapter(address target, address adapter) external;
+
+    ///  @notice Removes an adapter
+    function removeAdapter(address target) external;
 
     ///  @notice Sets the address of contract where fees get's deposited to
     function setFeeCollector(address payable _feeCollector) external;

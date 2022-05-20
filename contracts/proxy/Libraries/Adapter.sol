@@ -56,10 +56,10 @@ library Adapter {
     ) internal {
         // Collect fee from returnedAmount token
         uint256 fee = computeFee(returnedAmount, feeRate);
-        sendToken(IERC20(returnedToken), feeCollector, fee);
+        IERC20(returnedToken).safeTransfer(feeCollector, fee);
 
         // Credit user with returnedAmount tokens less fee
-        sendToken(IERC20(returnedToken), msg.sender, returnedAmount - fee);
+        IERC20(returnedToken).safeTransfer(msg.sender, returnedAmount - fee);
     }
 
     /// @notice collect fee and send remaining value to user
@@ -70,10 +70,10 @@ library Adapter {
     ) internal {
         // Collect fee from returnedAmount value
         uint256 fee = computeFee(returnedAmount, feeRate);
-        sendValue(feeCollector, fee);
+        feeCollector.transferEth((fee));
 
         // Credit user with returnedAmount value less fee
-        sendValue(payable(msg.sender), returnedAmount - fee);
+        payable(msg.sender).transferEth((returnedAmount - fee));
     }
 
     function sendValue(address payable recipient, uint256 amount) internal {
@@ -92,11 +92,8 @@ library Adapter {
         return amount / feeRate;
     }
 
-    function isSwapFromValue(address tokenIn) internal returns (bool) {
-        if (msg.value > 0 && tokenIn != address(0)) {
-            revert("Ether should not be sent in fromToken swap");
-        }
-        return msg.value > 0 && tokenIn == address(0);
+    function isSwapFromValue() internal returns (bool) {
+        return msg.value > 0;
     }
 
     function isSwapToValue(address tokenOut) internal pure returns (bool) {
