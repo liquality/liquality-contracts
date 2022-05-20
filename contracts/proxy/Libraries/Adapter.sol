@@ -10,6 +10,7 @@ import "../LibTransfer.sol";
 library Adapter {
     using SafeERC20 for IERC20;
     using LibTransfer for address payable;
+    uint256 private constant MAX_INT = 2**256 - 1;
 
     function beginFromTokenSwap(
         address target,
@@ -21,7 +22,10 @@ library Adapter {
         IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
 
         // Approve target as spender
-        IERC20(fromToken).safeApprove(target, fromAmount);
+        if (IERC20(fromToken).allowance(address(this), target) < fromAmount) {
+            // Check if target already has allowance
+            IERC20(fromToken).safeApprove(target, MAX_INT);
+        }
         // Call target
         // solhint-disable-next-line
         (bool success, bytes memory response) = target.call(data);
