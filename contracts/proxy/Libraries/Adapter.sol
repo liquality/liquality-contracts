@@ -76,18 +76,6 @@ library Adapter {
         payable(msg.sender).transferEth((returnedAmount - fee));
     }
 
-    function sendValue(address payable recipient, uint256 amount) internal {
-        recipient.transferEth((amount));
-    }
-
-    function sendToken(
-        IERC20 token,
-        address recipient,
-        uint256 amount
-    ) internal {
-        token.safeTransfer(recipient, amount);
-    }
-
     function computeFee(uint256 amount, uint256 feeRate) internal pure returns (uint256) {
         return amount / feeRate;
     }
