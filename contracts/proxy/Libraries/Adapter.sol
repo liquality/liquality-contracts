@@ -10,7 +10,7 @@ import "../LibTransfer.sol";
 library Adapter {
     using SafeERC20 for IERC20;
     using LibTransfer for address payable;
-    uint256 private constant MAX_INT = 2**256 - 1;
+    uint256 private constant MAX_INT = type(uint256).max;
 
     function beginFromTokenSwap(
         address target,
