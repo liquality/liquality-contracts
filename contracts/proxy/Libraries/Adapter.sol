@@ -10,7 +10,7 @@ import "../LibTransfer.sol";
 library Adapter {
     using SafeERC20 for IERC20;
     using LibTransfer for address payable;
-    uint256 private constant MAX_INT = type(uint256).max;
+    uint256 private constant MAX_UINT = type(uint256).max;
 
     function beginFromTokenSwap(
         address target,
@@ -24,7 +24,7 @@ library Adapter {
         // Approve target as spender
         if (IERC20(fromToken).allowance(address(this), target) < fromAmount) {
             // Check if target already has allowance
-            IERC20(fromToken).safeApprove(target, MAX_INT);
+            IERC20(fromToken).safeApprove(target, MAX_UINT);
         }
         // Call target
         // solhint-disable-next-line
@@ -49,31 +49,31 @@ library Adapter {
 
     /// @notice collect fee and send remaining token to user
     function handleReturnedToken(
-        address returnedToken,
-        uint256 returnedAmount,
+        address token,
+        uint256 amount,
         uint256 feeRate,
         address feeCollector
     ) internal {
-        // Collect fee from returnedAmount token
-        uint256 fee = computeFee(returnedAmount, feeRate);
-        IERC20(returnedToken).safeTransfer(feeCollector, fee);
+        // Collect fee from amount
+        uint256 fee = computeFee(amount, feeRate);
+        IERC20(token).safeTransfer(feeCollector, fee);
 
-        // Credit user with returnedAmount tokens less fee
-        IERC20(returnedToken).safeTransfer(msg.sender, returnedAmount - fee);
+        // Credit user with amount less fee
+        IERC20(token).safeTransfer(msg.sender, amount - fee);
     }
 
     /// @notice collect fee and send remaining value to user
     function handleReturnedValue(
-        uint256 returnedAmount,
+        uint256 value,
         uint256 feeRate,
         address payable feeCollector
     ) internal {
-        // Collect fee from returnedAmount value
-        uint256 fee = computeFee(returnedAmount, feeRate);
-        feeCollector.transferEth((fee));
+        // Collect fee from value
+        uint256 fee = computeFee(value, feeRate);
+        feeCollector.transferEth(fee);
 
-        // Credit user with returnedAmount value less fee
-        payable(msg.sender).transferEth((returnedAmount - fee));
+        // Credit user with value less fee
+        payable(msg.sender).transferEth(value - fee);
     }
 
     function computeFee(uint256 amount, uint256 feeRate) internal pure returns (uint256) {

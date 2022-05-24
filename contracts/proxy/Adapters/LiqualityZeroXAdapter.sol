@@ -8,7 +8,7 @@ import "../interfaces/ILiqualityProxyAdapter.sol";
 contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
     /// @notice This works for ZeroX sellToUniswap.
     function swap(
-        uint256 _feeRate,
+        uint256 feeRate,
         address feeCollector,
         LiqualityProxySwapParams calldata swapParams
     ) external payable {
@@ -19,12 +19,7 @@ contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
             // If it's a swap from value
             response = Adapter.beginFromValueSwap(swapParams.target, swapParams.data);
             returnedAmount = abi.decode(response, (uint256));
-            Adapter.handleReturnedToken(
-                swapParams.tokenOut,
-                returnedAmount,
-                _feeRate,
-                feeCollector
-            );
+            Adapter.handleReturnedToken(swapParams.tokenOut, returnedAmount, feeRate, feeCollector);
         } else {
             // If it's a swap from Token
             response = Adapter.beginFromTokenSwap(
@@ -37,13 +32,13 @@ contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
 
             // handle returnedAmount
             if (Adapter.isSwapToValue(swapParams.tokenOut)) {
-                Adapter.handleReturnedValue(returnedAmount, _feeRate, payable(feeCollector));
+                Adapter.handleReturnedValue(returnedAmount, feeRate, payable(feeCollector));
             } else {
                 // If it's a swap to token
                 Adapter.handleReturnedToken(
                     swapParams.tokenOut,
                     returnedAmount,
-                    _feeRate,
+                    feeRate,
                     feeCollector
                 );
             }
@@ -52,7 +47,7 @@ contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
         LiqualityProxySwapInfo memory swapInfo = LiqualityProxySwapInfo({
             target: swapParams.target,
             user: msg.sender,
-            feeRate: _feeRate,
+            feeRate: feeRate,
             tokenIn: swapParams.tokenIn,
             tokenOut: swapParams.tokenOut,
             amountIn: swapParams.amountIn,
