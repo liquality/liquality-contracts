@@ -26,6 +26,7 @@ library Adapter {
             // Check if target already has allowance
             IERC20(fromToken).safeApprove(target, MAX_UINT);
         }
+
         // Call target
         // solhint-disable-next-line
         (bool success, bytes memory response) = target.call(data);

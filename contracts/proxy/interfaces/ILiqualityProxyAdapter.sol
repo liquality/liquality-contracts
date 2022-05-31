@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.10;
 
-import "./IProxyCommons.sol";
+// import "./IProxyCommons.sol";
 
-interface ILiqualityProxyAdapter is IProxyCommons {
+interface ILiqualityProxyAdapter {
     struct LiqualityProxySwapInfo {
         address target;
         address user;
@@ -20,6 +20,7 @@ interface ILiqualityProxyAdapter is IProxyCommons {
     function swap(
         uint256 feeRate,
         address feeCollector,
-        LiqualityProxySwapParams calldata swapParams
+        address target,
+        bytes calldata swapParams
     ) external payable;
 }

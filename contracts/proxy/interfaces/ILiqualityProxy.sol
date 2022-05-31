@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.10;
 
-import "./IProxyCommons.sol";
+// import "./IProxyCommons.sol";
 
-interface ILiqualityProxy is IProxyCommons {
+interface ILiqualityProxy {
     /// @dev Emitted when execution reverted with no reason.
     error LiqProxy__ExecutionReverted();
 
@@ -20,7 +20,7 @@ interface ILiqualityProxy is IProxyCommons {
     error LiqProxy__InvalidSwap();
 
     /// @notice this function is callable by anyone
-    function swap(LiqualityProxySwapParams calldata swapParams) external payable;
+    function swap(address target, bytes calldata swapParams) external payable;
 
     ///  @notice this function changes the admin
     function changeAdmin(address newAdmin) external;

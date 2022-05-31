@@ -6,37 +6,53 @@ import "../Libraries/Adapter.sol";
 import "../interfaces/ILiqualityProxyAdapter.sol";
 
 contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
+    address private constant ETH_ADD = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
     /// @notice This works for ZeroX sellToUniswap.
     function swap(
         uint256 feeRate,
         address feeCollector,
-        LiqualityProxySwapParams calldata swapParams
+        address target,
+        bytes calldata data
     ) external payable {
-        // Determine the swap type(fromToken or fromValue) and initiate swap.
+        // SwapParams memory params;
+        // Decode swapParams
+        (address[] memory tokens, uint256 sellAmount, uint256 minBuyAmount, ) = abi.decode(
+            data[4:],
+            (address[], uint256, uint256, bool)
+        );
+        if ((msg.value > 0 && tokens[0] != ETH_ADD) || (msg.value == 0 && tokens[0] == ETH_ADD)) {
+            revert("Invalid Swap");
+        }
+
+        // Validate input
+
         bytes memory response;
         uint256 returnedAmount;
+
+        // Determine the swap type(fromToken or fromValue) and initiate swap.
         if (Adapter.isSwapFromValue()) {
             // If it's a swap from value
-            response = Adapter.beginFromValueSwap(swapParams.target, swapParams.data);
+            response = Adapter.beginFromValueSwap(target, data);
             returnedAmount = abi.decode(response, (uint256));
-            Adapter.handleReturnedToken(swapParams.tokenOut, returnedAmount, feeRate, feeCollector);
+            Adapter.handleReturnedToken(
+                tokens[tokens.length - 1],
+                returnedAmount,
+                feeRate,
+                feeCollector
+            );
         } else {
             // If it's a swap from Token
-            response = Adapter.beginFromTokenSwap(
-                swapParams.target,
-                swapParams.tokenIn,
-                swapParams.amountIn,
-                swapParams.data
-            );
+            response = Adapter.beginFromTokenSwap(target, tokens[0], sellAmount, data);
             returnedAmount = abi.decode(response, (uint256));
 
             // handle returnedAmount
-            if (Adapter.isSwapToValue(swapParams.tokenOut)) {
+            if (Adapter.isSwapToValue(tokens[tokens.length - 1])) {
                 Adapter.handleReturnedValue(returnedAmount, feeRate, payable(feeCollector));
             } else {
                 // If it's a swap to token
                 Adapter.handleReturnedToken(
-                    swapParams.tokenOut,
+                    tokens[tokens.length - 1],
                     returnedAmount,
                     feeRate,
                     feeCollector
@@ -45,12 +61,12 @@ contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
         }
 
         LiqualityProxySwapInfo memory swapInfo = LiqualityProxySwapInfo({
-            target: swapParams.target,
+            target: target,
             user: msg.sender,
             feeRate: feeRate,
-            tokenIn: swapParams.tokenIn,
-            tokenOut: swapParams.tokenOut,
-            amountIn: swapParams.amountIn,
+            tokenIn: tokens[0],
+            tokenOut: tokens[tokens.length - 1],
+            amountIn: sellAmount,
             amountOut: returnedAmount
         });
 
