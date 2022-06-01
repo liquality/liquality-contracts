@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.10;
 
-import "./IProxyCommons.sol";
+interface ILiqualityProxyAdapter {
+    /// @dev Emitted when swap params are invalid.
+    error LiqProxy__InvalidSwap();
 
-interface ILiqualityProxyAdapter is IProxyCommons {
     struct LiqualityProxySwapInfo {
         address target;
         address user;
@@ -17,9 +18,13 @@ interface ILiqualityProxyAdapter is IProxyCommons {
     /// @dev Emitted when a successful swap operation goes throuth the proxy.
     event LiqualityProxySwap(LiqualityProxySwapInfo swapInfo);
 
+    /// @param feeRate An int expression for the actual "rate in percentage".
+    /// 5% (i.e 5/100) becomes as 20. So fee equals amount/20 in this case
+    /// @param data the encoded data to be forwarded to the target swapper
     function swap(
         uint256 feeRate,
         address feeCollector,
-        LiqualityProxySwapParams calldata swapParams
+        address target,
+        bytes calldata data
     ) external payable;
 }

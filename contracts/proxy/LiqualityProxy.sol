@@ -20,20 +20,12 @@ contract LiqualityProxy is ILiqualityProxy {
         admin = _admin;
     }
 
-    function swap(LiqualityProxySwapParams calldata swapParams) external payable {
-        // Revert if value is sent fromToken swap or if value is not sent with fromValue swap
-        if (
-            (msg.value > 0 && swapParams.tokenIn != address(0)) ||
-            (msg.value == 0 && swapParams.tokenIn == address(0))
-        ) {
-            revert LiqProxy__InvalidSwap();
-        }
-
+    function swap(address target, bytes calldata data) external payable {
         // Determine adapter to use
-        address adapter = targetToAdapter[swapParams.target];
+        address adapter = targetToAdapter[target];
 
         if (adapter == address(0)) {
-            revert LiqProxy__SwapperNotSupported(swapParams.target);
+            revert LiqProxy__SwapperNotSupported(target);
         }
 
         // Delegate call to the adapter contract.
@@ -43,7 +35,8 @@ contract LiqualityProxy is ILiqualityProxy {
                 ILiqualityProxyAdapter.swap.selector,
                 feeRate,
                 feeCollector,
-                swapParams
+                target,
+                data
             )
         );
 
