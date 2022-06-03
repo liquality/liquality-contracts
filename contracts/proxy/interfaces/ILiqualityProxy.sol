@@ -2,22 +2,34 @@
 pragma solidity >=0.8.10;
 
 interface ILiqualityProxy {
-    /// @dev Emitted when passing an EOA or an undeployed contract as the target.
-    error LiqProxy__TargetInvalid(address target);
-
     /// @dev Emitted when execution reverted with no reason.
     error LiqProxy__ExecutionReverted();
 
-    /// @dev Emitted when the caller is not the liquality router.
-    error LiqProxy__ExecutionNotAuthorized(address liqualityRouter, address caller, address target);
+    error LiqProxy__ExecutionNotAuthorized();
 
-    /// @notice Emitted when the liquality router is changed during the DELEGATECALL.
-    error LiqProxy__RouterChanged(address originalRouter, address newRouter);
+    /// @dev Emitted when the target swapper is not supported.
+    error LiqProxy__SwapperNotSupported(address target);
 
-    struct FeeData {
-        address payable account;
-        uint256 fee;
-    }
+    /// @dev Emitted when unsupported function of swapper is encountered.
+    error LiqProxy__SwapperFunctionNotSupported(address target, bytes4 targetFunction);
 
-    function execute(address target, bytes calldata data) external payable returns (bool success);
+    error LiqProxy__InvalidAdmin();
+
+    /// @notice this function is callable by anyone
+    function swap(address target, bytes calldata data) external payable;
+
+    ///  @notice this function changes the admin
+    function changeAdmin(address newAdmin) external;
+
+    ///  @notice Add/update adapter for a target swapper
+    function addAdapter(address target, address adapter) external;
+
+    ///  @notice Removes an adapter
+    function removeAdapter(address target) external;
+
+    ///  @notice Sets the address of contract where fees get's deposited to
+    function setFeeCollector(address payable _feeCollector) external;
+
+    ///  @notice Sets the feeRate. Fee equals amount / feeRate
+    function setFeeRate(uint256 _feeRate) external;
 }

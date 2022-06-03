@@ -2,63 +2,82 @@
 pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./interfaces/ILiqualityProxyAdapter.sol";
 import "./interfaces/ILiqualityProxy.sol";
+import "./LibTransfer.sol";
 
 contract LiqualityProxy is ILiqualityProxy {
     using SafeERC20 for IERC20;
+    using LibTransfer for address payable;
+    address payable private feeCollector;
+    address private admin;
+    uint256 private feeRate;
 
-    uint256 public constant gasReserve = 5_000;
+    ///@notice targetToAdapter maps each swapper to it's adapter
+    mapping(address => address) public targetToAdapter;
 
-    address public liqualityRouter;
-
-    constructor(address _liqualityRouter) {
-        liqualityRouter = _liqualityRouter;
+    constructor(address _admin) {
+        admin = _admin;
     }
 
-    function execute(address target, bytes calldata data) external payable returns (bool success) {
-        // Check that the caller is the liquality router
-        if (liqualityRouter != msg.sender) {
-            revert LiqProxy__ExecutionNotAuthorized(liqualityRouter, msg.sender, target);
+    function swap(address target, bytes calldata data) external payable {
+        // Determine adapter to use
+        address adapter = targetToAdapter[target];
+
+        if (adapter == address(0)) {
+            revert LiqProxy__SwapperNotSupported(target);
         }
 
-        // Check that the target is a valid contract.
-        uint256 codeSize;
+        // Delegate call to the adapter contract.
         // solhint-disable-next-line
-        assembly {
-            codeSize := extcodesize(target)
-        }
-        if (codeSize == 0) {
-            revert LiqProxy__TargetInvalid(target);
-        }
-
-        // Save the router address in memory. This local variable cannot be modified during the DELEGATECALL.
-        address liqualityRouter_ = liqualityRouter;
-
-        // Reserve some gas to ensure that the function has enough to finish the execution.
-        uint256 stipend = gasleft() - gasReserve;
-
-        // Delegate call to the target contract.
-        bytes memory response;
-        // solhint-disable-next-line
-        (success, response) = target.delegatecall{gas: stipend}(data);
-
-        // Check that the router has not been changed.
-        if (liqualityRouter_ != liqualityRouter) {
-            revert LiqProxy__RouterChanged(liqualityRouter_, liqualityRouter);
-        }
+        (bool success, bytes memory response) = adapter.delegatecall(
+            abi.encodeWithSelector(
+                ILiqualityProxyAdapter.swap.selector,
+                feeRate,
+                feeCollector,
+                target,
+                data
+            )
+        );
 
         // Check if the call was successful or not.
         if (!success) {
-            // If there is return data, the call reverted with a reason or a custom error.
-            if (response.length > 0) {
-                // solhint-disable-next-line
-                assembly {
-                    let returndata_size := mload(response)
-                    revert(add(32, response), returndata_size)
-                }
-            } else {
-                revert LiqProxy__ExecutionReverted();
-            }
+            revert(string(response));
         }
+    }
+
+    function changeAdmin(address newAdmin) external onlyAdmin {
+        if (newAdmin == address(0)) {
+            revert LiqProxy__InvalidAdmin();
+        }
+        admin = newAdmin;
+    }
+
+    function addAdapter(address target, address adapter) external onlyAdmin {
+        if (target == address(0)) {
+            revert LiqProxy__SwapperNotSupported(target);
+        }
+        targetToAdapter[target] = adapter;
+    }
+
+    function removeAdapter(address target) external onlyAdmin {
+        targetToAdapter[target] = address(0);
+    }
+
+    function setFeeCollector(address payable _feeCollector) external onlyAdmin {
+        feeCollector = _feeCollector;
+    }
+
+    function setFeeRate(uint256 _feeRate) external onlyAdmin {
+        feeRate = _feeRate;
+    }
+
+    /// @notice Needed in case a swapper refunds value
+    // solhint-disable-next-line
+    receive() external payable {}
+
+    modifier onlyAdmin() {
+        if (msg.sender != admin) revert LiqProxy__ExecutionNotAuthorized();
+        _;
     }
 }
