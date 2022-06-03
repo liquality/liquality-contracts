@@ -80,12 +80,4 @@ library Adapter {
     function computeFee(uint256 amount, uint256 feeRate) internal pure returns (uint256) {
         return amount / feeRate;
     }
-
-    function isSwapFromValue() internal returns (bool) {
-        return msg.value > 0;
-    }
-
-    function isSwapToValue(address tokenOut, address ethAddress) internal pure returns (bool) {
-        return tokenOut == ethAddress;
-    }
 }
