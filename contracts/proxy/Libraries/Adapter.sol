@@ -3,6 +3,7 @@ pragma solidity >=0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../LibTransfer.sol";
+import "hardhat/console.sol";
 
 /// @notice contains functions common to all adapters.
 // @TODO consider(Yes or No) changing to an external library so it doesn't count
@@ -57,10 +58,17 @@ library Adapter {
     ) internal {
         // Collect fee from amount
         uint256 fee = computeFee(amount, feeRate);
+        console.log(fee);
+        console.log(feeCollector);
+        console.log(token);
         IERC20(token).safeTransfer(feeCollector, fee);
+
+        console.log("Transfered to feeCollector");
 
         // Credit user with amount less fee
         IERC20(token).safeTransfer(msg.sender, amount - fee);
+
+        console.log("Transfered to user");
     }
 
     /// @notice collect fee and send remaining value to user

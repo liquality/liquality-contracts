@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Libraries/Adapter.sol";
 import "../interfaces/ILiqualityProxyAdapter.sol";
 import "../LibTransfer.sol";
+import "hardhat/console.sol";
 
 interface IUniSwapPool {
     function token0() external view returns (address);
@@ -29,6 +30,7 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
 
     address private constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address private constant ZERO_ADDRESS = address(0);
+    address private constant WETH_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     bytes4 private constant AGV4_SWAP = 0x7c025200; //swap(address,(address,address,address,address,uint256,uint256,uint256,bytes),bytes)
     bytes4 private constant CLIPPER_SWAP = 0xb0431182; //clipperSwap(address,address,uint256,uint256)
     bytes4 private constant UNISWAPV3_SWAP = 0xe449022e; //uniswapV3Swap(uint256,uint256,uint256[])
@@ -44,13 +46,24 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
         // Swap Params
         (
             address tokenIn,
+            address tokenOut0,
+            address tokenOut1,
             address tokenOut,
             uint256 sellAmount,
             bytes4 swapFnSelector
         ) = getSwapParams(data);
 
+        console.log("Token out after decoding");
+        console.log(tokenOut);
         // Validate input
-        if ((msg.value > 0 && !isETH(tokenIn)) || (msg.value == 0 && isETH(tokenIn))) {
+        if (
+            (msg.value > 0 && !isETH(tokenIn) && tokenIn != WETH_ADDRESS) ||
+            (msg.value == 0 && isETH(tokenIn))
+        ) {
+            console.log("Reverting on invalid Swap");
+            console.log(msg.value);
+            console.log(tokenIn);
+            console.log(tokenOut);
             revert("Invalid Swap");
         }
 
@@ -62,6 +75,7 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
             // If it's a swap from value
             response = Adapter.beginFromValueSwap(target, data);
 
+            console.log("Uniswap call began");
             if (swapFnSelector == AGV4_SWAP) {
                 // Only this swap function behaves differently
                 uint256 spentAmount;
@@ -74,7 +88,15 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
                 }
             } else {
                 returnedAmount = abi.decode(response, (uint256));
+                console.log("Amount returned");
+                console.log(returnedAmount);
             }
+
+            console.log("Just before call to return token");
+            console.log(tokenOut);
+
+            tokenOut = determineTokenOut(tokenOut, tokenOut0, tokenOut1, returnedAmount);
+            console.log(tokenOut);
 
             Adapter.handleReturnedToken(tokenOut, returnedAmount, feeRate, feeCollector);
         } else {
@@ -101,6 +123,8 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
                 Adapter.handleReturnedValue(returnedAmount, feeRate, payable(feeCollector));
             } else {
                 // If it's a swap to token
+                tokenOut = determineTokenOut(tokenOut, tokenOut0, tokenOut1, returnedAmount);
+
                 Adapter.handleReturnedToken(tokenOut, returnedAmount, feeRate, feeCollector);
             }
         }
@@ -123,6 +147,8 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
         view
         returns (
             address tokenIn,
+            address tokenOut0,
+            address tokenOut1,
             address tokenOut,
             uint256 sellAmount,
             bytes4 swapFnSelector
@@ -134,6 +160,8 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
             address caller;
             AGV4SwapDescription memory desc;
             (caller, desc, ) = abi.decode(data[4:], (address, AGV4SwapDescription, bytes));
+            console.log("The Dest receiver");
+            console.log(desc.dstReceiver);
             tokenIn = desc.srcToken;
             tokenOut = desc.dstToken;
             sellAmount = desc.amount;
@@ -151,13 +179,30 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
                 // Multiple hops
                 address firstPool = address(uint160(pools[0]));
                 address lastPool = address(uint160(pools[pools.length - 1]));
-                tokenIn = IUniSwapPool(firstPool).token0();
-                tokenOut = IUniSwapPool(lastPool).token1();
+                address tokenIn0 = IUniSwapPool(firstPool).token0();
+                address tokenIn1 = IUniSwapPool(firstPool).token1();
+                if (IERC20(tokenIn0).balanceOf(address(this)) >= sellAmount) {
+                    tokenIn = tokenIn0;
+                } else {
+                    tokenIn = tokenIn1;
+                }
+                tokenOut0 = IUniSwapPool(lastPool).token0();
+                tokenOut1 = IUniSwapPool(lastPool).token1();
             } else {
                 // Single hop
                 address pool = address(uint160(pools[0]));
-                tokenIn = IUniSwapPool(pool).token0();
-                tokenOut = IUniSwapPool(pool).token1();
+                address token0 = IUniSwapPool(pool).token0();
+                address token1 = IUniSwapPool(pool).token1();
+                console.log("Uniswap v3 pool tokens");
+                console.log(token0);
+                console.log(token1);
+                if (IERC20(token0).balanceOf(address(this)) >= sellAmount) {
+                    tokenIn = token0;
+                    tokenOut = token1;
+                } else {
+                    tokenIn = token1;
+                    tokenOut = token0;
+                }
             }
         } else if (swapFnSelector == UNO_SWAP) {
             uint256 minReturn;
@@ -167,11 +212,32 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
                 (address, uint256, uint256, bytes32[])
             );
             address pool = address(uint160(uint256(pools[pools.length - 1])));
-            tokenOut = IUniSwapPool(pool).token1();
+            tokenOut0 = IUniSwapPool(pool).token0();
+            tokenOut1 = IUniSwapPool(pool).token1();
         }
+        console.log("Just after calling get params");
+
+        console.log(tokenOut);
     }
 
     function isETH(address tokenAdr) internal pure returns (bool) {
         return (tokenAdr == ZERO_ADDRESS || tokenAdr == ETH_ADDRESS);
+    }
+
+    function determineTokenOut(
+        address tokenOut,
+        address tokenOut0,
+        address tokenOut1,
+        uint256 amount
+    ) internal view returns (address actualTokenOut) {
+        // Determine tokenOut
+        if (tokenOut == ZERO_ADDRESS) {
+            if (IERC20(tokenOut0).balanceOf(address(this)) >= amount) {
+                actualTokenOut = tokenOut0;
+            } else {
+                actualTokenOut = tokenOut1;
+            }
+        }
+        actualTokenOut = tokenOut;
     }
 }
