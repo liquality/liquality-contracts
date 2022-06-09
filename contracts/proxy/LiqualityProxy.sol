@@ -59,7 +59,7 @@ contract LiqualityProxy is ILiqualityProxy {
         admin = newAdmin;
     }
 
-    function addAdapter() external onlyAdmin {
+    function addAdapter(address target, address adapter) external onlyAdmin {
         if (target == address(0)) {
             revert LiqProxy__SwapperNotSupported(target);
         }
