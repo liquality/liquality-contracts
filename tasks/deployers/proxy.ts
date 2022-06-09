@@ -13,7 +13,11 @@ import {
   LiqualityZeroXAdapter,
   LiqualityZeroXAdapter__factory
 } from '../../typechain'
-import { SWAPPERS } from '../proxy/utils'
+
+export const SWAPPERS = {
+  ONE_INCH_AGGREGATORV4: '0x1111111254fb6c44bAC0beD2854e76F90643097d'.toLowerCase(), //Verified
+  ZEROX: '0xDef1C0ded9bec7F1a1670819833240f027b25EfF'.toLowerCase() //  Verified
+}
 
 task('deployLiqualityProxy').setAction(async function (taskArguments: TaskArguments, { ethers }) {
   console.log('================= Deploying Liquality Proxy =================')
