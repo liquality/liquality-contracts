@@ -30,6 +30,9 @@ interface ILiqualityProxy {
     ///  @notice Sets the address of contract where fees get's deposited to
     function setFeeCollector(address payable _feeCollector) external;
 
-    ///  @notice Sets the feeRate. Fee equals amount / feeRate
+    ///  @notice Sets the _feeRate. Fee equals amount / _feeRate
+    /// @param _feeRate An int expression for the actual "rate in percentage".
+    /// 5% (i.e 5/100) becomes as 20. So fee equals amount/20 in this case;
+    /// 0.2% (i.e 2/1000) becomes as 500, and 0.02% (i.e 2/10000) becomes as 5000
     function setFeeRate(uint256 _feeRate) external;
 }

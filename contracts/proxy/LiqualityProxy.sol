@@ -4,7 +4,7 @@ pragma solidity 0.8.10;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/ILiqualityProxyAdapter.sol";
 import "./interfaces/ILiqualityProxy.sol";
-import "./LibTransfer.sol";
+import "./Libraries/LibTransfer.sol";
 
 contract LiqualityProxy is ILiqualityProxy {
     using SafeERC20 for IERC20;
@@ -16,8 +16,14 @@ contract LiqualityProxy is ILiqualityProxy {
     ///@notice targetToAdapter maps each swapper to it's adapter
     mapping(address => address) public targetToAdapter;
 
-    constructor(address _admin) {
+    constructor(
+        address _admin,
+        uint256 _feeRate,
+        address payable _feeCollector
+    ) {
         admin = _admin;
+        feeRate = _feeRate;
+        feeCollector = _feeCollector;
     }
 
     function swap(address target, bytes calldata data) external payable {
@@ -53,7 +59,7 @@ contract LiqualityProxy is ILiqualityProxy {
         admin = newAdmin;
     }
 
-    function addAdapter(address target, address adapter) external onlyAdmin {
+    function addAdapter() external onlyAdmin {
         if (target == address(0)) {
             revert LiqProxy__SwapperNotSupported(target);
         }

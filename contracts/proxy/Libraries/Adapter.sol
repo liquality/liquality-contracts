@@ -2,7 +2,7 @@
 pragma solidity >=0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../LibTransfer.sol";
+import "./LibTransfer.sol";
 import "hardhat/console.sol";
 
 /// @notice contains functions common to all adapters.
@@ -19,22 +19,26 @@ library Adapter {
         uint256 fromAmount,
         bytes memory data
     ) internal returns (bytes memory) {
+        console.log("Came to beginFromTokenSwap");
+        console.log(fromToken);
+        console.log(fromAmount);
+        console.log(IERC20(fromToken).balanceOf(msg.sender));
         // Transfer users token to proxy
         IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
-
+        console.log("Tansfered token to  proxy");
         // Approve target as spender
         if (IERC20(fromToken).allowance(address(this), target) < fromAmount) {
             // Check if target already has allowance
             IERC20(fromToken).safeApprove(target, MAX_UINT);
         }
-
+        console.log("Approved target  as spender");
         // Call target
         // solhint-disable-next-line
         (bool success, bytes memory response) = target.call(data);
         if (!success) {
             revert(string(response));
         }
-
+        console.log("Finished calling target");
         return response;
     }
 
@@ -45,7 +49,6 @@ library Adapter {
         if (!success) {
             revert(string(response));
         }
-
         return response;
     }
 
@@ -61,13 +64,13 @@ library Adapter {
         console.log(fee);
         console.log(feeCollector);
         console.log(token);
+        console.log("See ether balance of the contract below >>> ");
+        console.log(address(this).balance);
         IERC20(token).safeTransfer(feeCollector, fee);
 
         console.log("Transfered to feeCollector");
-
         // Credit user with amount less fee
         IERC20(token).safeTransfer(msg.sender, amount - fee);
-
         console.log("Transfered to user");
     }
 
@@ -79,8 +82,12 @@ library Adapter {
     ) internal {
         // Collect fee from value
         uint256 fee = computeFee(value, feeRate);
+        console.log(fee);
+        console.log(feeCollector);
+        console.log(value);
+        console.log("Handle  returned  value See ether balance of the contract below >>> ");
+        console.log(address(this).balance);
         feeCollector.transferEth(fee);
-
         // Credit user with value less fee
         payable(msg.sender).transferEth(value - fee);
     }
