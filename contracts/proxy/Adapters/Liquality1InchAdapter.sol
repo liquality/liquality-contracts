@@ -23,7 +23,7 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
         bytes permit;
     }
 
-    address private immutable WNATIVE_ADDRESS;
+    address private immutable wNativeAddress;
     address private constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address private constant ZERO_ADDRESS = address(0);
     bytes4 private constant AGV4_SWAP = 0x7c025200; //swap(address,(address,address,address,address,uint256,uint256,uint256,bytes),bytes)
@@ -42,7 +42,7 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
     // bytes1 private constant UNISWAPV3_FROM_ETH_OFFSET = 0xc0;
 
     constructor(address wNative) {
-        WNATIVE_ADDRESS = wNative;
+        wNativeAddress = wNative;
     }
 
     function swap(
@@ -213,10 +213,10 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
 
             if (swapToValue) {
                 tokenOut = ETH_ADDRESS;
-                tokenIn = token0 == WNATIVE_ADDRESS ? token1 : token0;
+                tokenIn = token0 == wNativeAddress ? token1 : token0;
             } else if (swapFromValue) {
                 tokenIn = ETH_ADDRESS;
-                tokenOut = token0 == WNATIVE_ADDRESS ? token1 : token0;
+                tokenOut = token0 == wNativeAddress ? token1 : token0;
             } else {
                 // Check First byte of pool to know if token1 is tokenIn
                 bool pool0Token0IsTokenIn = pools[0] & ONE_FOR_ZERO_MASK == 0;
