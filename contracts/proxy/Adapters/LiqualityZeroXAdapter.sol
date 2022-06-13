@@ -32,27 +32,23 @@ contract LiqualityZeroXAdapter is ILiqualityProxyAdapter {
         }
 
         // Validate input
-
-        bytes memory response;
         uint256 returnedAmount;
 
         // Determine the swap type(fromToken or fromValue) and initiate swap.
         if (msg.value > 0) {
             // If it's a swap from value
-            response = Adapter.beginFromValueSwap(target, data);
-            returnedAmount = abi.decode(response, (uint256));
-            Adapter.handleReturnedToken(tokenOut, returnedAmount, feeRate, feeCollector);
+            Adapter.beginFromValueSwap(target, data);
+            Adapter.handleReturnedToken(tokenOut, feeRate, feeCollector);
         } else {
             // If it's a swap from Token
-            response = Adapter.beginFromTokenSwap(target, tokenIn, sellAmount, data);
-            returnedAmount = abi.decode(response, (uint256));
+            Adapter.beginFromTokenSwap(target, tokenIn, sellAmount, data);
 
             // handle returnedAmount
             if (isETH(tokens[tokens.length - 1])) {
-                Adapter.handleReturnedValue(returnedAmount, feeRate, payable(feeCollector));
+                returnedAmount = Adapter.handleReturnedValue(feeRate, payable(feeCollector));
             } else {
                 // If it's a swap to token
-                Adapter.handleReturnedToken(tokenOut, returnedAmount, feeRate, feeCollector);
+                returnedAmount = Adapter.handleReturnedToken(tokenOut, feeRate, feeCollector);
             }
         }
 

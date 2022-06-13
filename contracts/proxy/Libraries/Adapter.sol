@@ -55,10 +55,10 @@ library Adapter {
     /// @notice collect fee and send remaining token to user
     function handleReturnedToken(
         address token,
-        uint256 amount,
         uint256 feeRate,
         address feeCollector
-    ) internal {
+    ) internal returns (uint256 amount) {
+        amount = IERC20(token).balanceOf(address(this));
         // Collect fee from amount
         uint256 fee = computeFee(amount, feeRate);
         console.log(fee);
@@ -75,11 +75,11 @@ library Adapter {
     }
 
     /// @notice collect fee and send remaining value to user
-    function handleReturnedValue(
-        uint256 value,
-        uint256 feeRate,
-        address payable feeCollector
-    ) internal {
+    function handleReturnedValue(uint256 feeRate, address payable feeCollector)
+        internal
+        returns (uint256 value)
+    {
+        value = address(this).balance;
         // Collect fee from value
         uint256 fee = computeFee(value, feeRate);
         console.log(fee);
