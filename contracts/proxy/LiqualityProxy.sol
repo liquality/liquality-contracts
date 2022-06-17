@@ -1,44 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./interfaces/ILiqualityProxyAdapter.sol";
+import "./interfaces/ISwapperAdapter.sol";
 import "./interfaces/ILiqualityProxy.sol";
-import "./Libraries/LibTransfer.sol";
 
 contract LiqualityProxy is ILiqualityProxy {
-    using SafeERC20 for IERC20;
-    using LibTransfer for address payable;
     address payable private feeCollector;
     address private admin;
-    uint256 private feeRate;
 
     ///@notice targetToAdapter maps each swapper to it's adapter
     mapping(address => address) public targetToAdapter;
 
-    constructor(
-        address _admin,
-        uint256 _feeRate,
-        address payable _feeCollector
-    ) {
+    ///@notice targetToAdapter maps each swapper to the fee rate we use in it's case
+    mapping(address => uint256) public targetToFeeRate;
+
+    constructor(address _admin, address payable _feeCollector) {
         admin = _admin;
-        feeRate = _feeRate;
         feeCollector = _feeCollector;
     }
 
     function swap(address target, bytes calldata data) external payable {
         // Determine adapter to use
         address adapter = targetToAdapter[target];
-
-        if (adapter == address(0)) {
-            revert LiqProxy__SwapperNotSupported(target);
-        }
+        if (adapter == address(0)) revert LiqProxy__SwapperNotSupported(target);
+        // Determine applicable feeRate
+        uint256 feeRate = targetToFeeRate[target];
+        if (feeRate <= 0) revert LiqProxy__InvalidFeeRate();
 
         // Delegate call to the adapter contract.
         // solhint-disable-next-line
         (bool success, bytes memory response) = adapter.delegatecall(
             abi.encodeWithSelector(
-                ILiqualityProxyAdapter.swap.selector,
+                ISwapperAdapter.swap.selector,
                 feeRate,
                 feeCollector,
                 target,
@@ -74,8 +67,8 @@ contract LiqualityProxy is ILiqualityProxy {
         feeCollector = _feeCollector;
     }
 
-    function setFeeRate(uint256 _feeRate) external onlyAdmin {
-        feeRate = _feeRate;
+    function setFeeRate(uint256 feeRate, address target) external onlyAdmin {
+        targetToFeeRate[target] = feeRate;
     }
 
     /// @notice Needed in case a swapper refunds value

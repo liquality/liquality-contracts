@@ -10,8 +10,8 @@ interface ILiqualityProxy {
     /// @dev Emitted when the target swapper is not supported.
     error LiqProxy__SwapperNotSupported(address target);
 
-    /// @dev Emitted when unsupported function of swapper is encountered.
-    error LiqProxy__SwapperFunctionNotSupported(address target, bytes4 targetFunction);
+    /// @dev Emitted when feeRate is zero(0)
+    error LiqProxy__InvalidFeeRate();
 
     error LiqProxy__InvalidAdmin();
 
@@ -31,8 +31,9 @@ interface ILiqualityProxy {
     function setFeeCollector(address payable _feeCollector) external;
 
     ///  @notice Sets the _feeRate. Fee equals amount / _feeRate
-    /// @param _feeRate An int expression for the actual "rate in percentage".
+    /// @param feeRate An int expression for the actual "rate in percentage".
+    /// @param target The swapper to which the feeRate should apply
     /// 5% (i.e 5/100) becomes as 20. So fee equals amount/20 in this case;
     /// 0.2% (i.e 2/1000) becomes as 500, and 0.02% (i.e 2/10000) becomes as 5000
-    function setFeeRate(uint256 _feeRate) external;
+    function setFeeRate(uint256 feeRate, address target) external;
 }

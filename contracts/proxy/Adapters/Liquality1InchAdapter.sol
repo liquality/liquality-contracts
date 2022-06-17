@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.10;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../Libraries/Adapter.sol";
-import "../interfaces/ILiqualityProxyAdapter.sol";
+import "../Libraries/FullSwap.sol";
+import "../interfaces/ISwapperAdapter.sol";
 import "../interfaces/IUniSwapPool.sol";
-import "../Libraries/LibTransfer.sol";
-import "hardhat/console.sol";
 
-contract Liquality1InchAdapter is ILiqualityProxyAdapter {
-    using LibTransfer for address payable;
-    using SafeERC20 for IERC20;
-
+contract Liquality1InchAdapter is ISwapperAdapter, FullSwap {
     struct AGV4SwapDescription {
         address srcToken;
         address dstToken;
@@ -24,8 +18,6 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
     }
 
     address private immutable wNativeAddress;
-    address private constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    address private constant ZERO_ADDRESS = address(0);
     bytes4 private constant AGV4_SWAP = 0x7c025200; //swap(address,(address,address,address,address,uint256,uint256,uint256,bytes),bytes)
     bytes4 private constant CLIPPER_SWAP = 0xb0431182; //clipperSwap(address,address,uint256,uint256)
     bytes4 private constant UNISWAPV3_SWAP = 0xe449022e; //uniswapV3Swap(uint256,uint256,uint256[])
@@ -36,10 +28,7 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
     uint256 private constant TO_NATIVE_MASK = 1 << 253; // Mask data for identifing when ETH is tokenOut
 
     bytes1 private constant UNOSWAP_TO_ETH_OFFSET = 0x40; // Pool prefix identifier on pool data, when ETH is tokenOut
-    // bytes1 private constant UNISWAPV3_TO_ETH_OFFSET = 0x20; // Mask identifier on pool data, when ETH is tokenOut
     bytes1 private constant UNOSWAP_FROM_TOKEN1_OFFSET = 0x80;
-
-    // bytes1 private constant UNISWAPV3_FROM_ETH_OFFSET = 0xc0;
 
     constructor(address wNative) {
         wNativeAddress = wNative;
@@ -53,52 +42,7 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
     ) external payable {
         (address tokenIn, address tokenOut, uint256 sellAmount) = getSwapParams(data);
 
-        // Validate input
-        if ((msg.value > 0 && !isETH(tokenIn)) || (msg.value == 0 && isETH(tokenIn))) {
-            revert("Invalid Swap");
-        }
-
-        uint256 returnedAmount;
-
-        // Determine the swap type(fromToken or fromValue) and initiate swap.
-        if (msg.value > 0) {
-            // If it's a swap from value
-            Adapter.beginFromValueSwap(target, data);
-            uint256 proxyTokenInBal = address(this).balance;
-            if (proxyTokenInBal > 0) {
-                payable(msg.sender).transferEth(proxyTokenInBal);
-            }
-
-            returnedAmount = Adapter.handleReturnedToken(tokenOut, feeRate, feeCollector);
-        } else {
-            // If it's a swap from Token
-            Adapter.beginFromTokenSwap(target, tokenIn, sellAmount, data);
-            uint256 proxyTokenInBal = IERC20(tokenIn).balanceOf(address(this));
-            if (proxyTokenInBal > 0) {
-                IERC20(tokenIn).safeTransfer(msg.sender, proxyTokenInBal);
-            }
-
-            // handle returnedAmount
-            if (isETH(tokenOut)) {
-                console.log("Got to handleReturnedValue");
-                returnedAmount = Adapter.handleReturnedValue(feeRate, payable(feeCollector));
-                console.log("sent returned ETH");
-            } else {
-                // If it's a swap to token
-                returnedAmount = Adapter.handleReturnedToken(tokenOut, feeRate, feeCollector);
-            }
-        }
-
-        LiqualityProxySwapInfo memory swapInfo = LiqualityProxySwapInfo({
-            target: target,
-            user: msg.sender,
-            feeRate: feeRate,
-            tokenIn: tokenIn,
-            tokenOut: tokenOut,
-            amountIn: sellAmount,
-            amountOut: returnedAmount
-        });
-        emit LiqualityProxySwap(swapInfo);
+        execute(feeRate, feeCollector, target, data, tokenIn, tokenOut, sellAmount);
     }
 
     function getSwapParams(bytes calldata data)
@@ -218,15 +162,11 @@ contract Liquality1InchAdapter is ILiqualityProxyAdapter {
                 tokenIn = ETH_ADDRESS;
                 tokenOut = token0 == wNativeAddress ? token1 : token0;
             } else {
-                // Check First byte of pool to know if token1 is tokenIn
+                // Check whether token0 is tokenIn
                 bool pool0Token0IsTokenIn = pools[0] & ONE_FOR_ZERO_MASK == 0;
                 tokenIn = pool0Token0IsTokenIn ? token0 : token1;
                 tokenOut = tokenIn == token0 ? token1 : token0;
             }
         }
-    }
-
-    function isETH(address tokenAdr) internal pure returns (bool) {
-        return (tokenAdr == ZERO_ADDRESS || tokenAdr == ETH_ADDRESS);
     }
 }
