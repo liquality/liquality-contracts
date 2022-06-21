@@ -4,6 +4,7 @@ pragma solidity >=0.8.10;
 import "../Libraries/FullSwap.sol";
 import "../interfaces/ISwapperAdapter.sol";
 import "../interfaces/IUniSwapPool.sol";
+import "hardhat/console.sol";
 
 contract Liquality1InchAdapter is ISwapperAdapter, FullSwap {
     struct AGV4SwapDescription {
@@ -37,12 +38,18 @@ contract Liquality1InchAdapter is ISwapperAdapter, FullSwap {
     function swap(
         uint256 feeRate,
         address feeCollector,
-        address target,
+        address swapper,
         bytes calldata data
     ) external payable {
-        (address tokenIn, address tokenOut, uint256 sellAmount) = getSwapParams(data);
+        console.log("Got here");
 
-        execute(feeRate, feeCollector, target, data, tokenIn, tokenOut, sellAmount);
+        (address tokenIn, address tokenOut, uint256 sellAmount) = getSwapParams(data);
+        console.log("Swap Details");
+        console.log(tokenIn);
+        console.log(tokenOut);
+        console.log(sellAmount);
+
+        execute(feeRate, feeCollector, swapper, data, tokenIn, tokenOut, sellAmount);
     }
 
     function getSwapParams(bytes calldata data)
@@ -116,10 +123,13 @@ contract Liquality1InchAdapter is ISwapperAdapter, FullSwap {
             uint256 sellAmount
         )
     {
+        console.log("Got to Uniswapv3");
         uint256 minReturn;
         uint256[] memory pools;
 
         (sellAmount, minReturn, pools) = abi.decode(data[4:], (uint256, uint256, uint256[]));
+        console.log("Decode uniswap V3");
+
         bool swapFromValue = pools[0] & FROM_NATIVE_MASK > 0;
 
         if (pools.length > 1) {

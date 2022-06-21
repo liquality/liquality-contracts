@@ -7,7 +7,7 @@ contract Adapter {
     error LiqProxy__InvalidMsgVal();
 
     struct LiqualityProxySwapInfo {
-        address target;
+        address swapper;
         address user;
         uint256 fee;
         address tokenIn;

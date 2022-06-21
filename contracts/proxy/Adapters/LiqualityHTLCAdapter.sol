@@ -18,7 +18,7 @@ contract LiqualityHTLCAdapter is ISwapperAdapter, AtomicSwap {
     function swap(
         uint256 feeRate,
         address feeCollector,
-        address target,
+        address swapper,
         bytes calldata data
     ) external payable {
         // Decode data
@@ -26,6 +26,6 @@ contract LiqualityHTLCAdapter is ISwapperAdapter, AtomicSwap {
         (htlc) = abi.decode(data[4:], (HTLCData));
 
         // We arbitrarily use address(1) as tokenOut is unknown
-        execute(feeRate, feeCollector, target, data, htlc.tokenAddress, address(1), htlc.amount);
+        execute(feeRate, feeCollector, swapper, data, htlc.tokenAddress, address(1), htlc.amount);
     }
 }

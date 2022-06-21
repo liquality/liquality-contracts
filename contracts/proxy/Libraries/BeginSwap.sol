@@ -12,7 +12,7 @@ contract BeginSwap is Adapter {
     uint256 private constant MAX_UINT = type(uint256).max;
 
     function beginFromTokenSwap(
-        address target,
+        address swapper,
         address token,
         uint256 amount,
         uint256 feeRate,
@@ -26,14 +26,14 @@ contract BeginSwap is Adapter {
         // Transfer users token to proxy
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        // Approve target as spender
-        if (IERC20(token).allowance(address(this), target) < amount) {
-            // Check if target already has allowance
-            IERC20(token).safeApprove(target, MAX_UINT);
+        // Approve swapper as spender
+        if (IERC20(token).allowance(address(this), swapper) < amount) {
+            // Check if swapper already has allowance
+            IERC20(token).safeApprove(swapper, MAX_UINT);
         }
-        // Call target
+        // Call swapper
         // solhint-disable-next-line
-        (bool success, bytes memory response) = target.call(data);
+        (bool success, bytes memory response) = swapper.call(data);
         if (!success) {
             revert(string(response));
         }
@@ -46,7 +46,7 @@ contract BeginSwap is Adapter {
     }
 
     function beginFromValueSwap(
-        address target,
+        address swapper,
         uint256 value,
         uint256 feeRate,
         address payable feeCollector,
@@ -58,9 +58,9 @@ contract BeginSwap is Adapter {
 
         if (msg.value != value + fee) revert LiqProxy__InvalidMsgVal();
 
-        // Call target with value
+        // Call swapper with value
         // solhint-disable-next-line
-        (bool success, bytes memory response) = target.call{value: value}(data);
+        (bool success, bytes memory response) = swapper.call{value: value}(data);
         if (!success) {
             revert(string(response));
         }

@@ -22,19 +22,10 @@ export const SWAPPERS = {
   HTLC: '0x133713376F69C1A67d7f3594583349DFB53d8166'.toLowerCase()
 }
 
-const wEth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+const wEth_arbitrum = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
+const wEth_avalance = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'
 
 task('deployLiqualityProxy').setAction(async function (taskArguments: TaskArguments, { ethers }) {
-  console.log('================= Deploying Liquality Proxy =================')
-  const [signer1, signer2] = await ethers.getSigners()
-  const feeCollector = await signer2.getAddress()
-  const admin = await signer1.getAddress()
-
-  const liqProxyFactory: LiqualityProxy__factory = await ethers.getContractFactory('LiqualityProxy')
-  const liqProxy: LiqualityProxy = <LiqualityProxy>await liqProxyFactory.deploy(admin, feeCollector)
-  await liqProxy.deployed()
-  console.log('Liquality Proxy deployed to: ', liqProxy.address)
-
   console.log('================= Deploying LiqZeroXAdapter =================')
   const liqualityZeroXAdapterFactory: LiqualityZeroXAdapter__factory =
     await ethers.getContractFactory('LiqualityZeroXAdapter')
@@ -44,29 +35,15 @@ task('deployLiqualityProxy').setAction(async function (taskArguments: TaskArgume
   await liqZeroXAdapter.deployed()
   console.log('liqZeroXAdapter deployed to: ', liqZeroXAdapter.address)
 
-  await (await liqProxy.addAdapter(SWAPPERS.ZEROX, liqZeroXAdapter.address)).wait()
-  console.log('liqZeroXAdapter added to proxy')
-
-  await (await liqProxy.setFeeRate(1000, SWAPPERS.ZEROX)).wait()
-  console.log('liqZeroXAdapter feeRate added to proxy')
-
   console.log('================= Deploying Liquality1InchAdapter =================')
   const Liquality1InchAdapterFactory: Liquality1InchAdapter__factory = <
     Liquality1InchAdapter__factory
   >await ethers.getContractFactory('Liquality1InchAdapter')
   const liquality1InchAdapter: Liquality1InchAdapter = <Liquality1InchAdapter>(
-    await Liquality1InchAdapterFactory.deploy(wEth)
+    await Liquality1InchAdapterFactory.deploy(wEth_avalance)
   )
   await liquality1InchAdapter.deployed()
   console.log('Liquality1InchAdapter deployed to: ', liquality1InchAdapter.address)
-
-  await (
-    await liqProxy.addAdapter(SWAPPERS.ONE_INCH_AGGREGATORV4, liquality1InchAdapter.address)
-  ).wait()
-  console.log('Liquality1InchAdapter added to proxy')
-
-  await (await liqProxy.setFeeRate(1000, SWAPPERS.ONE_INCH_AGGREGATORV4)).wait()
-  console.log('Liquality1InchAdapter feeRate added to proxy')
 
   console.log('================= Deploying LiqualityHTLCAdapter =================')
   const LiqualityHTLCAdapterFactory: LiqualityHTLCAdapter__factory = <
@@ -78,9 +55,32 @@ task('deployLiqualityProxy').setAction(async function (taskArguments: TaskArgume
   await liqualityHTLCAdapter.deployed()
   console.log('LiqualityHTLCAdapter deployed to: ', liqualityHTLCAdapter.address)
 
-  await (await liqProxy.addAdapter(SWAPPERS.HTLC, liqualityHTLCAdapter.address)).wait()
-  console.log('LiqualityHTLCAdapter added to proxy')
+  console.log('================= Deploying Liquality Proxy =================')
+  const [signer1, signer2] = await ethers.getSigners()
+  const feeCollector = await signer2.getAddress()
+  const admin = await signer1.getAddress()
 
-  await (await liqProxy.setFeeRate(1000, SWAPPERS.HTLC)).wait()
-  console.log('LiqualityHTLCAdapter feeRate added to proxy')
+  // Construct swapperInfo
+  const swappersInfo = []
+  swappersInfo.push({
+    swapper: SWAPPERS.ZEROX,
+    adapter: liqZeroXAdapter.address,
+    feeRate: 1000
+  })
+  swappersInfo.push({
+    swapper: SWAPPERS.ONE_INCH_AGGREGATORV4,
+    adapter: liquality1InchAdapter.address,
+    feeRate: 1000
+  })
+  swappersInfo.push({
+    swapper: SWAPPERS.HTLC,
+    adapter: liqualityHTLCAdapter.address,
+    feeRate: 1000
+  })
+  const liqProxyFactory: LiqualityProxy__factory = await ethers.getContractFactory('LiqualityProxy')
+  const liqProxy: LiqualityProxy = <LiqualityProxy>(
+    await liqProxyFactory.deploy(admin, feeCollector, swappersInfo)
+  )
+  await liqProxy.deployed()
+  console.log('Liquality Proxy deployed to: ', liqProxy.address)
 })

@@ -9,7 +9,7 @@ contract LiqualityZeroXAdapter is ISwapperAdapter, FullSwap {
     function swap(
         uint256 feeRate,
         address feeCollector,
-        address target,
+        address swapper,
         bytes calldata data
     ) external payable {
         // Decode data
@@ -18,6 +18,6 @@ contract LiqualityZeroXAdapter is ISwapperAdapter, FullSwap {
         address tokenIn = tokens[0];
         address tokenOut = tokens[tokens.length - 1];
 
-        execute(feeRate, feeCollector, target, data, tokenIn, tokenOut, sellAmount);
+        execute(feeRate, feeCollector, swapper, data, tokenIn, tokenOut, sellAmount);
     }
 }

@@ -8,23 +8,43 @@ contract LiqualityProxy is ILiqualityProxy {
     address payable private feeCollector;
     address private admin;
 
-    ///@notice targetToAdapter maps each swapper to it's adapter
-    mapping(address => address) public targetToAdapter;
+    ///@notice swapperToAdapter maps each swapper to it's adapter
+    mapping(address => address) public swapperToAdapter;
 
-    ///@notice targetToAdapter maps each swapper to the fee rate we use in it's case
-    mapping(address => uint256) public targetToFeeRate;
+    ///@notice swapperToAdapter maps each swapper to the fee rate we use in it's case
+    mapping(address => uint256) public swapperToFeeRate;
 
-    constructor(address _admin, address payable _feeCollector) {
+    constructor(
+        address _admin,
+        address payable _feeCollector,
+        SwapperInfo[] memory swappersInfo
+    ) {
         admin = _admin;
         feeCollector = _feeCollector;
+
+        address adapter;
+        address swapper;
+        uint256 feeRate;
+        for (uint256 i = 0; i < swappersInfo.length; i++) {
+            swapper = swappersInfo[i].swapper;
+            adapter = swappersInfo[i].adapter;
+            feeRate = swappersInfo[i].feeRate;
+
+            if (adapter == address(0) || swapper == address(0))
+                revert LiqProxy__SwapperNotSupported(swapper);
+            if (feeRate <= 0) revert LiqProxy__InvalidFeeRate();
+
+            swapperToAdapter[swapper] = adapter;
+            swapperToFeeRate[swapper] = feeRate;
+        }
     }
 
-    function swap(address target, bytes calldata data) external payable {
+    function swap(address swapper, bytes calldata data) external payable {
         // Determine adapter to use
-        address adapter = targetToAdapter[target];
-        if (adapter == address(0)) revert LiqProxy__SwapperNotSupported(target);
+        address adapter = swapperToAdapter[swapper];
+        if (adapter == address(0)) revert LiqProxy__SwapperNotSupported(swapper);
         // Determine applicable feeRate
-        uint256 feeRate = targetToFeeRate[target];
+        uint256 feeRate = swapperToFeeRate[swapper];
         if (feeRate <= 0) revert LiqProxy__InvalidFeeRate();
 
         // Delegate call to the adapter contract.
@@ -34,7 +54,7 @@ contract LiqualityProxy is ILiqualityProxy {
                 ISwapperAdapter.swap.selector,
                 feeRate,
                 feeCollector,
-                target,
+                swapper,
                 data
             )
         );
@@ -46,29 +66,27 @@ contract LiqualityProxy is ILiqualityProxy {
     }
 
     function changeAdmin(address newAdmin) external onlyAdmin {
-        if (newAdmin == address(0)) {
-            revert LiqProxy__InvalidAdmin();
-        }
+        if (newAdmin == address(0)) revert LiqProxy__InvalidAdmin();
         admin = newAdmin;
     }
 
-    function addAdapter(address target, address adapter) external onlyAdmin {
-        if (target == address(0)) {
-            revert LiqProxy__SwapperNotSupported(target);
-        }
-        targetToAdapter[target] = adapter;
+    function addAdapter(address swapper, address adapter) external onlyAdmin {
+        if (adapter == address(0) || swapper == address(0))
+            revert LiqProxy__SwapperNotSupported(swapper);
+        swapperToAdapter[swapper] = adapter;
     }
 
-    function removeAdapter(address target) external onlyAdmin {
-        targetToAdapter[target] = address(0);
+    function removeAdapter(address swapper) external onlyAdmin {
+        swapperToAdapter[swapper] = address(0);
     }
 
     function setFeeCollector(address payable _feeCollector) external onlyAdmin {
         feeCollector = _feeCollector;
     }
 
-    function setFeeRate(uint256 feeRate, address target) external onlyAdmin {
-        targetToFeeRate[target] = feeRate;
+    function setFeeRate(uint256 feeRate, address swapper) external onlyAdmin {
+        if (feeRate <= 0) revert LiqProxy__InvalidFeeRate();
+        swapperToFeeRate[swapper] = feeRate;
     }
 
     /// @notice Needed in case a swapper refunds value

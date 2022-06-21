@@ -8,7 +8,7 @@ contract AtomicSwap is BeginSwap {
     function execute(
         uint256 feeRate,
         address feeCollector,
-        address target,
+        address swapper,
         bytes calldata data,
         address tokenIn,
         address tokenOut,
@@ -21,14 +21,14 @@ contract AtomicSwap is BeginSwap {
         // Determine the swap type(fromToken or fromValue) and initiate swap.
         if (msg.value > 0) {
             // If it's a swap from value
-            fee = beginFromValueSwap(target, sellAmount, feeRate, payable(feeCollector), data);
+            fee = beginFromValueSwap(swapper, sellAmount, feeRate, payable(feeCollector), data);
         } else {
             // If it's a swap from Token
-            fee = beginFromTokenSwap(target, tokenIn, sellAmount, feeRate, feeCollector, data);
+            fee = beginFromTokenSwap(swapper, tokenIn, sellAmount, feeRate, feeCollector, data);
         }
 
         LiqualityProxySwapInfo memory swapInfo = LiqualityProxySwapInfo({
-            target: target,
+            swapper: swapper,
             user: msg.sender,
             fee: fee,
             tokenIn: tokenIn,
