@@ -10,13 +10,36 @@ interface ILiqualityProxy {
     /// @dev Emitted when the swapper is not supported.
     error LiqProxy__SwapperNotSupported(address swapper);
 
-    /// @dev Emitted when feeRate is zero(0)
-    error LiqProxy__InvalidFeeRate();
-
     error LiqProxy__InvalidAdmin();
 
+    struct SwapperInfo {
+        address swapper;
+        address adapter;
+    }
+
+    struct FeeData {
+        address payable account;
+        uint256 fee;
+    }
+
+    event FeePayment(address feeToken, uint256 fee);
+
     /// @notice this function is callable by anyone
-    function swap(address swapper, bytes calldata data) external payable;
+    function swap(
+        address swapper,
+        bytes calldata data,
+        address feeToken,
+        FeeData[] calldata fees
+    ) external payable;
+
+    /// @notice this function is callable by anyone
+    function swapWithReferral(
+        address swapper,
+        bytes calldata data,
+        address feeToken,
+        FeeData[] calldata fees,
+        address referrer
+    ) external payable;
 
     ///  @notice this function changes the admin
     function changeAdmin(address newAdmin) external;
@@ -26,20 +49,4 @@ interface ILiqualityProxy {
 
     ///  @notice Removes an adapter
     function removeAdapter(address swapper) external;
-
-    ///  @notice Sets the address of contract where fees get's deposited to
-    function setFeeCollector(address payable _feeCollector) external;
-
-    ///  @notice Sets the _feeRate. Fee equals amount / _feeRate
-    /// @param feeRate An int expression for the actual "rate in percentage".
-    /// @param swapper The swapper to which the feeRate should apply
-    /// 5% (i.e 5/100) becomes as 20. So fee equals amount/20 in this case;
-    /// 0.2% (i.e 2/1000) becomes as 500, and 0.02% (i.e 2/10000) becomes as 5000
-    function setFeeRate(uint256 feeRate, address swapper) external;
-
-    struct SwapperInfo {
-        address swapper;
-        address adapter;
-        uint256 feeRate;
-    }
 }

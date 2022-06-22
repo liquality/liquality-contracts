@@ -15,17 +15,12 @@ contract LiqualityHTLCAdapter is ISwapperAdapter, AtomicSwap {
     }
 
     /// @notice This works for ZeroX sellToUniswap.
-    function swap(
-        uint256 feeRate,
-        address feeCollector,
-        address swapper,
-        bytes calldata data
-    ) external payable {
+    function swap(address swapper, bytes calldata data) external payable {
         // Decode data
         HTLCData memory htlc;
         (htlc) = abi.decode(data[4:], (HTLCData));
 
         // We arbitrarily use address(1) as tokenOut is unknown
-        execute(feeRate, feeCollector, swapper, data, htlc.tokenAddress, address(1), htlc.amount);
+        execute(swapper, data, htlc.tokenAddress, address(1), htlc.amount);
     }
 }

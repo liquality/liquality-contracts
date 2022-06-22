@@ -9,7 +9,6 @@ contract Adapter {
     struct LiqualityProxySwapInfo {
         address swapper;
         address user;
-        uint256 fee;
         address tokenIn;
         address tokenOut;
         uint256 amountIn;

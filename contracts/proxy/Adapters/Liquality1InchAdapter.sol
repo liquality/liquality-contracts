@@ -35,12 +35,7 @@ contract Liquality1InchAdapter is ISwapperAdapter, FullSwap {
         wNativeAddress = wNative;
     }
 
-    function swap(
-        uint256 feeRate,
-        address feeCollector,
-        address swapper,
-        bytes calldata data
-    ) external payable {
+    function swap(address swapper, bytes calldata data) external payable {
         console.log("Got here");
 
         (address tokenIn, address tokenOut, uint256 sellAmount) = getSwapParams(data);
@@ -49,7 +44,7 @@ contract Liquality1InchAdapter is ISwapperAdapter, FullSwap {
         console.log(tokenOut);
         console.log(sellAmount);
 
-        execute(feeRate, feeCollector, swapper, data, tokenIn, tokenOut, sellAmount);
+        execute(swapper, data, tokenIn, tokenOut, sellAmount);
     }
 
     function getSwapParams(bytes calldata data)

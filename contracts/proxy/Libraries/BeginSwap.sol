@@ -15,14 +15,8 @@ contract BeginSwap is Adapter {
         address swapper,
         address token,
         uint256 amount,
-        uint256 feeRate,
-        address feeCollector,
         bytes memory data
-    ) internal returns (uint256 fee) {
-        // Collect fee from amount
-        fee = computeFee(amount, feeRate);
-        IERC20(token).safeTransferFrom(msg.sender, feeCollector, fee);
-
+    ) internal {
         // Transfer users token to proxy
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -48,16 +42,8 @@ contract BeginSwap is Adapter {
     function beginFromValueSwap(
         address swapper,
         uint256 value,
-        uint256 feeRate,
-        address payable feeCollector,
         bytes memory data
-    ) internal returns (uint256 fee) {
-        // Collect fee from value
-        fee = computeFee(value, feeRate);
-        feeCollector.transferEth(fee);
-
-        if (msg.value != value + fee) revert LiqProxy__InvalidMsgVal();
-
+    ) internal {
         // Call swapper with value
         // solhint-disable-next-line
         (bool success, bytes memory response) = swapper.call{value: value}(data);
@@ -70,9 +56,5 @@ contract BeginSwap is Adapter {
         if (proxyTokenInBal > 0) {
             payable(msg.sender).transferEth(proxyTokenInBal);
         }
-    }
-
-    function computeFee(uint256 amount, uint256 feeRate) internal pure returns (uint256) {
-        return amount / feeRate;
     }
 }

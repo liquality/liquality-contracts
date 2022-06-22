@@ -56,30 +56,26 @@ task('deployLiqualityProxy').setAction(async function (taskArguments: TaskArgume
   console.log('LiqualityHTLCAdapter deployed to: ', liqualityHTLCAdapter.address)
 
   console.log('================= Deploying Liquality Proxy =================')
-  const [signer1, signer2] = await ethers.getSigners()
-  const feeCollector = await signer2.getAddress()
+  const [signer1] = await ethers.getSigners()
   const admin = await signer1.getAddress()
 
   // Construct swapperInfo
   const swappersInfo = []
   swappersInfo.push({
     swapper: SWAPPERS.ZEROX,
-    adapter: liqZeroXAdapter.address,
-    feeRate: 1000
+    adapter: liqZeroXAdapter.address
   })
   swappersInfo.push({
     swapper: SWAPPERS.ONE_INCH_AGGREGATORV4,
-    adapter: liquality1InchAdapter.address,
-    feeRate: 1000
+    adapter: liquality1InchAdapter.address
   })
   swappersInfo.push({
     swapper: SWAPPERS.HTLC,
-    adapter: liqualityHTLCAdapter.address,
-    feeRate: 1000
+    adapter: liqualityHTLCAdapter.address
   })
   const liqProxyFactory: LiqualityProxy__factory = await ethers.getContractFactory('LiqualityProxy')
   const liqProxy: LiqualityProxy = <LiqualityProxy>(
-    await liqProxyFactory.deploy(admin, feeCollector, swappersInfo)
+    await liqProxyFactory.deploy(admin, swappersInfo, ethers.utils.hexZeroPad('0x', 20))
   )
   await liqProxy.deployed()
   console.log('Liquality Proxy deployed to: ', liqProxy.address)
